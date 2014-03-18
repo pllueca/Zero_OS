@@ -102,6 +102,7 @@ void init_sched(){
 	int i;
 	INIT_LIST_HEAD(&free_queue);
 	INIT_LIST_HEAD(&ready_queue);
+	/* inicialtza la free_queue */
 	for(i=0; i< NR_TASKS; i++) {
 		list_add(&task[i].task.list, &free_queue);
 	}
@@ -139,8 +140,9 @@ void task_switch(union task_union*t) {
 
 void inner_task_switch(union task_union* new) {
 	int esp,ss;
-	struct task_struct *new_task;
+	struct task_struct *new_task, *old_task;
 	page_table_entry *new_task_page;
+	old_task = current(); // task actual
 	new_task = (struct task_struct*) new;
 	esp = new_task -> kernel_esp;
 	ss = &new;
