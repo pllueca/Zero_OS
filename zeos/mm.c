@@ -190,9 +190,9 @@ void setTSS()
   set_task_reg(KERNEL_TSS);
 }
 
-void setTSS_tswitch(int esp0V, int ss0V) {
+void setTSS_tswitch(int esp0V) {
 	tss.esp0 = esp0V;
-	tss.ss0 = ss0V;
+	//	tss.ss0 = ss0V;
 }
 
 

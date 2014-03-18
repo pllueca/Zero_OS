@@ -8,6 +8,7 @@
 #include <list.h>
 #include <types.h>
 #include <mm_address.h>
+#include <libc.h>
 
 #define NR_TASKS      10
 #define KERNEL_STACK_SIZE	1024
@@ -17,9 +18,9 @@ enum state_t { ST_RUN, ST_READY, ST_BLOCKED };
 struct task_struct {
   int PID;			/* Process ID */
   page_table_entry * dir_pages_baseAddr;
-	int quantum;
-	int kernel_esp;
-	struct list_head list;
+  int quantum;
+  int kernel_esp;
+  struct list_head list;
 };
 
 union task_union {
@@ -29,9 +30,14 @@ union task_union {
 
 extern union task_union task[NR_TASKS]; /* Vector de tasques */
 struct task_struct *idle_task;
+struct task_struct *init_task;
 
 struct list_head free_queue;
 struct list_head ready_queue;
+
+
+int act_t; /* 0-> init, 1-> idle*/
+
 
 
 #define KERNEL_ESP(t)       	(DWord) &(t)->stack[KERNEL_STACK_SIZE]
@@ -50,6 +56,10 @@ struct task_struct * current();
 void inner_task_switch(union task_union*t);
 
 void task_switch(union task_union*t);
+
+void switchIdle();
+
+void switchInit();
 
 struct task_struct *list_head_to_task_struct(struct list_head *l);
 

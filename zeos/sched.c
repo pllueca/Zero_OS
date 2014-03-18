@@ -6,6 +6,8 @@
 #include <mm.h>
 #include <io.h>
 
+
+
 #define lh2ts list_head_to_task_struct
 
 union task_union task[NR_TASKS]
@@ -48,12 +50,12 @@ int allocate_DIR(struct task_struct *t)
 
 void cpu_idle(void)
 {
-	__asm__ __volatile__("sti": : :"memory");
-
-	while(1)
-	{
-	;
-	}
+  int a;
+  __asm__ __volatile__("sti": : :"memory");
+  while(1)
+    {
+      a = sys_write(1,"aaa\n", 4);
+    }
 }
 
 void init_idle (void)
@@ -66,40 +68,41 @@ void init_idle (void)
     list_del(l);
     idle_task = lh2ts(l);
     idle_task->PID = 0;
+    idle_task->kernel_esp = KERNEL_ESP((union task_union *) idle_task) - 8;
     e = allocate_DIR(idle_task);
     idle_stack = (union task_union*) idle_task;
-  
     // @cpu_idle apunta a la direccio de codi de cpu idle
-    idle_stack->stack[KERNEL_STACK_SIZE - 1] = &cpu_idle; //pos 1023
+    idle_stack->stack[KERNEL_STACK_SIZE - 1] = cpu_idle; //pos 1023
     idle_stack->stack[KERNEL_STACK_SIZE - 2] = 0;          //ebp register when undoing dynamic link
-    idle_task->kernel_esp = 0;
+    
     if(e != 1){
 	//restaurar &l a la free queue
     }
-
 
 }
 
 void init_task1(void){
 	int e;
-	struct task_struct *task1;
 	struct page_table_entry *task1_dir;
 	struct list_head *l;
 	l = list_first(&free_queue);
 	list_del(l);
-	task1 = lh2ts(l);
-	e = allocate_DIR(task1);
+	init_task = lh2ts(l);
+	init_task -> PID = 1;
+	init_task -> kernel_esp = KERNEL_ESP((union task_union *)init_task);
+	e = allocate_DIR(init_task);
 	if (e != 1) {
 	/*pinch*/
 	}
-	set_user_pages(task1);
-	task1_dir = get_DIR(task1);
+	set_user_pages(init_task);
+	task1_dir = get_DIR(init_task);
 	set_cr3(task1_dir);
 }
 
 
 void init_sched(){
 	int i;
+	act_t = 0;
 	INIT_LIST_HEAD(&free_queue);
 	INIT_LIST_HEAD(&ready_queue);
 	/* inicialtza la free_queue */
@@ -120,7 +123,7 @@ struct task_struct* current()
   return (struct task_struct*)(ret_value&0xfffff000);
 }
 
-
+/* wrapper */
 void task_switch(union task_union*t) {
 	__asm__ __volatile__(
 		"pushl %esi;"
@@ -139,16 +142,39 @@ void task_switch(union task_union*t) {
 }
 
 void inner_task_switch(union task_union* new) {
-	int esp,ss;
-	struct task_struct *new_task, *old_task;
-	page_table_entry *new_task_page;
-	old_task = current(); // task actual
-	new_task = (struct task_struct*) new;
-	esp = new_task -> kernel_esp;
-	ss = &new;
-	setTSS_tswitch(esp,ss);
-	new_task_page = get_DIR(new_task);
-	set_cr3(new_task_page);
+  int esp,ebp,ss;
+  struct task_struct *new_task, *act_task;
+  page_table_entry *new_task_page;
+  act_task = current(); // task actual
+  new_task = (struct task_struct*) new;
+ //movem el valor de el registre ebp a la variable ebp
+  __asm__ __volatile__ 
+    (" movl %%ebp, %0;"
+     :"=g" (ebp));
+  act_task-> kernel_esp = ebp;
+  // la tss ha dapuntar a la base de la pila (@pcb new)
+  // registre sp apunta a kernnel_esp de el PCB new
+  esp = new->stack[KERNEL_STACK_SIZE];
+  ss = new_task->kernel_esp;
+  setTSS_tswitch(esp);
+  new_task_page = get_DIR(new_task);
+  set_cr3(new_task_page);
+  __asm__ __volatile__
+    (
+     "movl %0, %%esp;"
+     "popl %%ebp;"
+     "ret;"
+     : :"g"(ss));
+}
 
-	//ebp al current PCB	
+
+/* canvia la taska actual x idle */
+void switchIdle(){
+  sys_write(1,"si\n",3);
+  task_switch(idle_task);
+}
+
+void switchInit(){
+  sys_write(1,"is\n",3);
+  task_switch(init_task);
 }
