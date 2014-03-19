@@ -42,9 +42,11 @@ int write(int fd, char* buffer, int size)
 
 int gettime()
 {
-  __asm__
-(" movl $10, %eax; \
-int $0x80;");
+  __asm__ 
+	  (
+	  " movl $10, %eax;"
+	   "int $0x80;" 
+	   );
   register int e asm("eax");
   if(e < 0)
     {
@@ -115,3 +117,15 @@ int strlen(char *a)
   return i;
 }
 
+int getpid()
+{
+	int pid;
+	__asm__
+		(
+		 "movl $20, %%eax;"
+		 "int $0x80;"
+		 "movl %%eax, %0;"
+		 :"=g"(pid)
+		 );
+	return pid;	
+}
