@@ -10,10 +10,9 @@ main(void)
 	//runjp();
 	pid = getpid();
 	if (pid == 1){
-		buffer = "proces init\n";
-		write(1,buffer,srtlen(buffer));
+		write(1,"pid",3);
 	}
-        while(1) 
+	while(1) 
     { 
  
     }

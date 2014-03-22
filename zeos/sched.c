@@ -54,7 +54,7 @@ void cpu_idle(void)
 	__asm__ __volatile__("sti": : :"memory");
 	while(1)
 		{
-			a = sys_write(1,"aaa\n", 4);
+			;
 		}
 }
 
