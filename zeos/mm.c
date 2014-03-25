@@ -192,7 +192,6 @@ void setTSS()
 
 void setTSS_tswitch(int esp0V) {
 	tss.esp0 = esp0V;
-	//	tss.ss0 = ss0V;
 }
 
 

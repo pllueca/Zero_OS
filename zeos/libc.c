@@ -20,18 +20,16 @@ int abs(int a)
 int write(int fd, char* buffer, int size)
 {
   int e;
-  __asm__ 
-(" pushl %%ebx ;\
-  movl 8(%%ebp),%%ebx ; \
+  __asm__ __volatile__
+    (" pushl %%ebx ;\
+  movl 8(%%ebp),%%ebx ;					\
   movl 12(%%ebp),%%ecx ;				\
   movl 16(%%ebp),%%edx; \
   movl $4, %%eax;   \
   int $0x80; \
   popl %%ebx; \
   movl %%eax, %0 "
-:"=g" (e));
-
-//register int e asm("eax");
+     :"=g" (e));
 
   if(e < 0){
     errno = abs(e);
@@ -42,7 +40,7 @@ int write(int fd, char* buffer, int size)
 
 int gettime()
 {
-  __asm__ 
+  __asm__ __volatile__
 	  (
 	  " movl $10, %eax;"
 	   "int $0x80;" 
@@ -120,12 +118,25 @@ int strlen(char *a)
 int getpid()
 {
 	int pid;
-	__asm__
+	__asm__ __volatile__
 		(
 		 "movl $20, %%eax;"
 		 "int $0x80;"
 		 "movl %%eax, %0;"
-		 :"=g"(pid)
-		 );
+		 :"=g"(pid));
 	return pid;	
+}
+
+int ret_from_fork()
+{
+  return 0;
+}
+
+int fork()
+{
+  __asm__ __volatile__
+    (
+     "movl $2, %eax;"
+     "int $0x80;"
+     );
 }
