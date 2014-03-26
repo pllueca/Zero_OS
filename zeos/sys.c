@@ -93,11 +93,14 @@ int ret_from_fork()
  * crea un proceso hijo identico al padre
  * el retorno de fork() sera 0 para el proceso hijo y el pid del nuevo proceso para el padre
  * sketch:
- * - adquirir un PCB libre de la freequeue
- * - heredar la kernel stack del padre
- * - copiar el espacio de memoria del padre al hijo (solo data+stack, codigo es compartido)
- * - al entrar en ejecucion el hijo ha de pasar por "ret_from_fork" para q retorne 0, y asi identificarlo como el proceso hijo
- * -
+ * - adquirir un PCB libre de la freequeue (1)
+ * - heredar la kernel stack del padre (2)
+ * - copiar el espacio de memoria del padre al hijo (solo data+stack, codigo es compartido) (3)
+ * - para esto se reservan NUM_PAG_DATA frames para el hijo (3.1), que se mapean en la tabla de paginas del padre(3.2) i del hijo(3.3)
+ * - al acabar de copiar los datos se liberan las paginas del hijo de la tabla de paginas del padre (3.4)
+ * - se ha de asignar a el hijo un pid q no este ocupado (max_pid + 1) (4)
+ * - al entrar en ejecucion el hijo ha de pasar por "ret_from_fork" para q retorne 0, y asi identificarlo como el proceso hijo ()
+ * - en algun momento de hace un flush de la tlb (set_cr3)
  */
 int sys_fork()
 {
@@ -107,52 +110,60 @@ int sys_fork()
   task_struct *child, *parent;
   page_table_entry *child_page, *parent_page;
   parent = current();
-  // get a free PCB for the child
-  if(list_empty(&free_queue) == 0){  //no sta buida
-    l = list_first(&free_queue);
-    list_del(l);
-    child = list_head_to_task_struct(l);
+  if(list_empty(&free_queue) == 0)
+    {
+      /* (1) */
+      l = list_first(&free_queue);
+      list_del(l);
+      child = list_head_to_task_struct(l);
+      /* (2) */
+      copy_data(parent,child, KERNEL_STACK_SIZE*4);
+      child_page = get_PT(child);
+      parent_page = get_PT(parent);
+      if(allocDir_ret != 1)
+        {
+          /* (3.1)  */
+          for(i = 0; i < NUM_PAG_DATA; ++i)
+            {
+              child_frame = alloc_frame(); 
+              if(child_frame >= 0){
+                set_ss_pag(child_page,i,child_frame); /* (3.2) */
+                set_ss_pag(parent_page, i, child_frame); /* (3.3) */
+              }
+              else
+                {
+                }
+            }
+          dir_ini = KERNEL_START + (NUM_PAG_KERNEL * PAGE_SIZE);
+          dir_dest = dir_ini + (NUM_PAG_CODE + NUM_PAG_DATA) * PAGE_SIZE;
+          /* (3) */
+          copy_data(dir_ini, dir_dest, NUM_PAG_DATA * PAGE_SIZE);
 
-    // inheritance of parent kernel stack
-    copy_data(parent,child, KERNEL_STACK_SIZE*4);
-    child_page = get_PT(child);
-    parent_page = get_PT(parent);
-    if(allocDir_ret != 1){
-      for(i = 0; i < NUM_PAG_DATA; ++i){
-        child_frame = alloc_frame();
-        if(child_frame >= 0){
-          set_ss_pag(child_page,i,child_frame);
-          set_ss_pag(parent_page, i, child_frame);  // se liberara al acabar
-        }
-        else{
-          //no quedan frames
-        }
-      }
-      //se han mapeado todos los frames dnd tocan
-      dir_ini = KERNEL_START + (NUM_PAG_KERNEL * PAGE_SIZE);
-      dir_dest = dir_ini + (NUM_PAG_CODE + NUM_PAG_DATA) * PAGE_SIZE; //en mem logica
-      copy_data(dir_ini, dir_dest, NUM_PAG_DATA * PAGE_SIZE);
+          /* (3.4)  */
+          for(i = 0; i < NUM_PAG_DATA; ++i)
+            {
+              del_ss_pag(parent_page, i); 
+            }
 
-      for(i = 0; i < NUM_PAG_DATA; ++i){
-        del_ss_pag(parent_page, i);  //se liberan los frames del hijo mapeados en la tabla de paginas del padre
-      }
-      PID = PID_MAX + 1;  // no hay PIDs repetidos
-      PID_MAX = PID;
-      child -> PID = PID;
-      /*
-       * el hijo empezara a ejecutarse saliendo de fork con valor de retorn 0
-       * child->kernel_esp = &ret_from_fork;
-       * list_add_tail(child.list, &freequeue);
-       */
-      return PID;
+          /* (4) */
+          PID = PID_MAX + 1;  // no hay PIDs repetidos
+          PID_MAX = PID;
+          child -> PID = PID;
+      
+          /* (5) */
+          child->kernel_esp = &ret_from_fork;
+          list_add_tail(child.list, &freequeue);
+          return PID;
+        }
+      else
+        {
+          /* no directory allocated */
+        }
     }
-    else{
-      /* no directory allocated */
+  else
+    {
+      /* no free pcb */
     }
-  }
-  else{
-    /* no free pcb */
-  }
   return PID;
 }
 
