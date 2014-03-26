@@ -99,7 +99,7 @@ int ret_from_fork()
  * - para esto se reservan NUM_PAG_DATA frames para el hijo (3.1), que se mapean en la tabla de paginas del padre(3.2) i del hijo(3.3)
  * - al acabar de copiar los datos se liberan las paginas del hijo de la tabla de paginas del padre (3.4)
  * - se ha de asignar a el hijo un pid q no este ocupado (max_pid + 1) (4)
- * - al entrar en ejecucion el hijo ha de pasar por "ret_from_fork" para q retorne 0, y asi identificarlo como el proceso hijo ()
+ * - al entrar en ejecucion el hijo ha de pasar por "ret_from_fork" para q retorne 0, y asi identificarlo como el proceso hijo (5)
  * - en algun momento de hace un flush de la tlb (set_cr3)
  */
 int sys_fork()
@@ -108,6 +108,7 @@ int sys_fork()
             allocDir_ret, i, dir_ini, dir_dest;
     list_head *l;
     task_struct *child, *parent;
+    task_union *child_union;
     page_table_entry *child_page, *parent_page;
     parent = current();
     if(list_empty(&free_queue) == 0)
@@ -116,6 +117,7 @@ int sys_fork()
         l = list_first(&free_queue);
         list_del(l);
         child = list_head_to_task_struct(l);
+        child_union = (union task_union *) child;
         /* (2) */
         copy_data(parent,child, KERNEL_STACK_SIZE*4);
         child_page = get_PT(child);
@@ -134,8 +136,9 @@ int sys_fork()
                 {
                 }
             }
-            dir_ini = KERNEL_START + (NUM_PAG_KERNEL * PAGE_SIZE);
-            dir_dest = dir_ini + (NUM_PAG_CODE + NUM_PAG_DATA) * PAGE_SIZE;
+ 
+            dir_ini = L_USER_START + ((NUM_PAG_CODE) * PAGE_SIZE);
+            dir_dest = dir_ini +  NUM_PAG_DATA * PAGE_SIZE;
             /* (3) */
             copy_data(dir_ini, dir_dest, NUM_PAG_DATA * PAGE_SIZE);
 
@@ -151,8 +154,10 @@ int sys_fork()
             child -> PID = PID;
       
             /* (5) */
-            child->kernel_esp = &ret_from_fork;
-            list_add_tail(child.list, &freequeue);
+            child_union -> stack[KERNEL_STACK_SIZE - 16] = ret_from_fork;
+            child_union -> stack[KERNEL_STACK_SIZE - 17] = 0;
+            child->kernel_esp =(int) &(child_union -> stack[KERNEL_STACK_SIZE - 17]);
+            list_add_tail(child->list, &freequeue);
             return PID;
         }
         else
@@ -164,7 +169,6 @@ int sys_fork()
     {
         /* no free pcb */
     }
-    return PID;
 }
 
 void sys_exit()
