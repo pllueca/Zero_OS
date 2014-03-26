@@ -17,6 +17,8 @@
 #define ESCRIPTURA 1
 #define MAX_WRITE 128
 
+int PID_MAX = 1;
+
 int check_fd(int fd, int permissions)
 {
   if (fd!=1) return -9; /*EBADF*/
@@ -77,37 +79,64 @@ int sys_getpid()
   return current()->PID;
 }
 
+
+/*
+ * lo ejecutara un proceso recien creado al entrar en la cpu x primera vez
+ */
+int ret_from_fork()
+{
+  return 0;
+}
+
 int sys_fork()
 {
-  int PID, child_frame;
+  int PID, child_frame, allocDir_ret;
   list_head *l;
   task_struct *child, *parent;
   page_table_entry *child_page, *parent_page;
   parent = current();
+
+  // get a free PCB for the child
   if(list_empty(&free_queue) == 0){  //no sta buida
     l = list_first(&free_queue);
     list_del(l);
     child = list_head_to_task_struct(l);
-    /* Copia cosas */
+
+    // inheritance of parent kernel stack
     copy_data(parent,child, KERNEL_STACK_SIZE*4);    
-    child_frame = alloc_frame();
-    if(child_frame >= 0){
-      /*
-       * cal copia la regio de codi i de data+stack del pare al fill
-       * com no es pot accedir, primer shan de mapejar les pagines del
-       * fill a la page table entry del fare, usant set_ss_pag i alliberantles despres
-       * amb del_ss_pag
-       */
+    allocDir_ret = allocate_DIR(child);
+    if(allocDir_ret != 1){    
+      child_frame = alloc_frame();
+      if(child_frame >= 0){
+	/*
+	 * cal copiar la regio de codi i de data+stack del pare al fill
+	 * com no es pot accedir, primer shan de mapejar les pagines del
+	 * fill a la page table entry del fare, usant set_ss_pag i alliberantles despres
+	 * amb del_ss_pag
+	 */
+	child_page = get_PT(child);
+	set_ss_pag(parent_page, "?" ,child_frame); //
+	copy_data();
+	del_ss_pag(parent_page, "?");
+	
+	PID = PID_MAX + 1;  // no hay PIDs repetidos
+	PID_MAX = PID;
+
+	child->kernel_esp = &ret_from_fork; // el hijo empezara a ejecutarse saliendo de fork con valor de retorn 0
+	list_add_tail(child.list, &freequeue);  
+	return PID;
+      }
+      else{
+	/* no frame */ 
+      }    
     }
     else{
-      /* no frame */ 
-    }    
+      /* no directory allocated */
+    }
   }
   else{
-    /* no free pcb */
+      /* no free pcb */
   }
-  
-  
   return PID;
 }
 
