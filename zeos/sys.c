@@ -79,17 +79,32 @@ int sys_getpid()
 
 int sys_fork()
 {
-  int PID=-1;
+  int PID, child_frame;
   list_head *l;
   task_struct *child, *parent;
+  page_table_entry *child_page, *parent_page;
   parent = current();
   if(list_empty(&free_queue) == 0){  //no sta buida
     l = list_first(&free_queue);
     list_del(l);
     child = list_head_to_task_struct(l);
     /* Copia cosas */
-    child->kernel_esp = parent->kernel_esp;
-    
+    copy_data(parent,child, KERNEL_STACK_SIZE*4);    
+    child_frame = alloc_frame();
+    if(child_frame >= 0){
+      /*
+       * cal copia la regio de codi i de data+stack del pare al fill
+       * com no es pot accedir, primer shan de mapejar les pagines del
+       * fill a la page table entry del fare, usant set_ss_pag i alliberantles despres
+       * amb del_ss_pag
+       */
+    }
+    else{
+      /* no frame */ 
+    }    
+  }
+  else{
+    /* no free pcb */
   }
   
   

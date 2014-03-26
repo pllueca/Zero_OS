@@ -3,7 +3,7 @@
  */
 
 #include <libc.h>
-
+#include <errno.h>
 #include <types.h>
 
 int errno;
@@ -83,22 +83,22 @@ void perror()
 {
   switch(errno)
     {
-  case 22:
+  case EINVAL:
     write(1,"size invalid\n",13);
     break;
-  case 9:
+  case EBADF:
     write(1,"error fd\n",6);
     break;
-  case 13:
+  case EACCES:
     write(1,"permision denied\n",17);
     break;
-  case 14:
+  case EFAULT:
     write(1,"buffer apunta a NULL\n",17);
     break;
   case 4:
     write(1,"error al gettime()\n",19);
     break;
-  case 38:
+  case ENOSYS:
     write(1,"not implemented\n",16);
     break;
   }
