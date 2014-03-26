@@ -21,49 +21,49 @@ int PID_MAX = 1;
 
 int check_fd(int fd, int permissions)
 {
-  if (fd!=1) return -9; /*EBADF*/
-  if (permissions!=ESCRIPTURA) return -13; /*EACCES*/
-  return 0;
+    if (fd!=1) return -9; /*EBADF*/
+    if (permissions!=ESCRIPTURA) return -13; /*EACCES*/
+    return 0;
 }
 
 int sys_ni_syscall()
 {
-  return -38; /*ENOSYS*/
+    return -38; /*ENOSYS*/
 }
 
 
 int sys_write(int fd,char * buffer, int size)
 {
-  if(check_fd(fd, 1) >= 0)
+    if(check_fd(fd, 1) >= 0)
     {
-      if(buffer != NULL) {
-        if(size >= 0)
-          {  //tot ok
-            int written = 0;
+        if(buffer != NULL) {
+            if(size >= 0)
+            {  //tot ok
+                int written = 0;
 	  
-            while(size >= MAX_WRITE)
-              {
-                char buff2[MAX_WRITE];
-                if(copy_from_user(buffer + written, &buff2, MAX_WRITE) >= 0)
-                  {
-                    int w = sys_write_console(&buff2, MAX_WRITE);
+                while(size >= MAX_WRITE)
+                {
+                    char buff2[MAX_WRITE];
+                    if(copy_from_user(buffer + written, &buff2, MAX_WRITE) >= 0)
+                    {
+                        int w = sys_write_console(&buff2, MAX_WRITE);
+                        written += w;
+                        size -= w;
+                    }
+                }	  
+                char buff2[size];  //size menor q max_write
+                if(copy_from_user(buffer + written, &buff2, size) >= 0){
+                    int w = sys_write_console(&buff2, size);
                     written += w;
                     size -= w;
-                  }
-              }	  
-            char buff2[size];  //size menor q max_write
-            if(copy_from_user(buffer + written, &buff2, size) >= 0){
-              int w = sys_write_console(&buff2, size);
-              written += w;
-              size -= w;
+                }
+                if(size == 0) return written;  //tot ok
             }
-            if(size == 0) return written;  //tot ok
-          }
-        return -22; //size< 0
-      }
-      return -14; //not null
+            return -22; //size< 0
+        }
+        return -14; //not null
     }
-  return -9; // fd not valid
+    return -9; // fd not valid
 }
 
 
@@ -71,12 +71,12 @@ extern int zeos_ticks ;
 
 int sys_gettime()
 {
-  return zeos_ticks;
+    return zeos_ticks;
 }
 
 int sys_getpid()
 {
-  return current()->PID;
+    return current()->PID;
 }
 
 
@@ -85,7 +85,7 @@ int sys_getpid()
  */
 int ret_from_fork()
 {
-  return 0;
+    return 0;
 }
 
 
@@ -104,67 +104,67 @@ int ret_from_fork()
  */
 int sys_fork()
 {
-  int PID, child_frame,
-    allocDir_ret, i, dir_ini, dir_dest;
-  list_head *l;
-  task_struct *child, *parent;
-  page_table_entry *child_page, *parent_page;
-  parent = current();
-  if(list_empty(&free_queue) == 0)
+    int PID, child_frame,
+            allocDir_ret, i, dir_ini, dir_dest;
+    list_head *l;
+    task_struct *child, *parent;
+    page_table_entry *child_page, *parent_page;
+    parent = current();
+    if(list_empty(&free_queue) == 0)
     {
-      /* (1) */
-      l = list_first(&free_queue);
-      list_del(l);
-      child = list_head_to_task_struct(l);
-      /* (2) */
-      copy_data(parent,child, KERNEL_STACK_SIZE*4);
-      child_page = get_PT(child);
-      parent_page = get_PT(parent);
-      if(allocDir_ret != 1)
+        /* (1) */
+        l = list_first(&free_queue);
+        list_del(l);
+        child = list_head_to_task_struct(l);
+        /* (2) */
+        copy_data(parent,child, KERNEL_STACK_SIZE*4);
+        child_page = get_PT(child);
+        parent_page = get_PT(parent);
+        if(allocDir_ret != 1)
         {
-          /* (3.1)  */
-          for(i = 0; i < NUM_PAG_DATA; ++i)
+            /* (3.1)  */
+            for(i = 0; i < NUM_PAG_DATA; ++i)
             {
-              child_frame = alloc_frame(); 
-              if(child_frame >= 0){
-                set_ss_pag(child_page,i,child_frame); /* (3.2) */
-                set_ss_pag(parent_page, i, child_frame); /* (3.3) */
-              }
-              else
+                child_frame = alloc_frame(); 
+                if(child_frame >= 0){
+                    set_ss_pag(child_page,i,child_frame); /* (3.2) */
+                    set_ss_pag(parent_page, i, child_frame); /* (3.3) */
+                }
+                else
                 {
                 }
             }
-          dir_ini = KERNEL_START + (NUM_PAG_KERNEL * PAGE_SIZE);
-          dir_dest = dir_ini + (NUM_PAG_CODE + NUM_PAG_DATA) * PAGE_SIZE;
-          /* (3) */
-          copy_data(dir_ini, dir_dest, NUM_PAG_DATA * PAGE_SIZE);
+            dir_ini = KERNEL_START + (NUM_PAG_KERNEL * PAGE_SIZE);
+            dir_dest = dir_ini + (NUM_PAG_CODE + NUM_PAG_DATA) * PAGE_SIZE;
+            /* (3) */
+            copy_data(dir_ini, dir_dest, NUM_PAG_DATA * PAGE_SIZE);
 
-          /* (3.4)  */
-          for(i = 0; i < NUM_PAG_DATA; ++i)
+            /* (3.4)  */
+            for(i = 0; i < NUM_PAG_DATA; ++i)
             {
-              del_ss_pag(parent_page, i); 
+                del_ss_pag(parent_page, i); 
             }
 
-          /* (4) */
-          PID = PID_MAX + 1;  // no hay PIDs repetidos
-          PID_MAX = PID;
-          child -> PID = PID;
+            /* (4) */
+            PID = PID_MAX + 1;  // no hay PIDs repetidos
+            PID_MAX = PID;
+            child -> PID = PID;
       
-          /* (5) */
-          child->kernel_esp = &ret_from_fork;
-          list_add_tail(child.list, &freequeue);
-          return PID;
+            /* (5) */
+            child->kernel_esp = &ret_from_fork;
+            list_add_tail(child.list, &freequeue);
+            return PID;
         }
-      else
+        else
         {
-          /* no directory allocated */
+            /* no directory allocated */
         }
     }
-  else
+    else
     {
-      /* no free pcb */
+        /* no free pcb */
     }
-  return PID;
+    return PID;
 }
 
 void sys_exit()
