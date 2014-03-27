@@ -9,7 +9,7 @@ extern unsigned int *p_rdtr ;
 DWord get_eflags(void)
 {
   register DWord flags;
-__asm__ __volatile__(
+  __asm__ __volatile__(
   "pushfl\n\t"
   "popl %0"
   : "=q" (flags) );

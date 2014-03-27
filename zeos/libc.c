@@ -127,15 +127,14 @@ int getpid()
     return pid;	
 }
 
-int ret_from_fork()
-{
-    return 0;
-}
-
 int fork()
 {
+  int pid_child;
     __asm__ __volatile__ (
-        "movl $2, %eax;"
+        "movl $2, %%eax;"
         "int $0x80;"
-                          );
+	"movl %%eax, %0;"
+	:"=g"(pid_child) 
+			  );
+    return pid_child;
 }

@@ -43,7 +43,7 @@ int keyboard_routine()
   }
   else if(act_t == 1){  //switch to init
     act_t = 0;
-     switchInit();
+    switchInit();
 
   }
   return 1;

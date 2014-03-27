@@ -54,7 +54,8 @@ void cpu_idle(void)
     __asm__ __volatile__("sti": : :"memory");
     while(1)
     {
-        ;
+      printk("a");
+      printk("\n");
     }
 }
 
@@ -157,7 +158,7 @@ void inner_task_switch(union task_union* new)
 
     new_task = (struct task_struct*) new;
     esp_new = new_task->kernel_esp;
-    setTSS_tswitch((new->stack[KERNEL_STACK_SIZE])); //esp0 de la TSS
+    setTSS_tswitch((int)&(new->stack[KERNEL_STACK_SIZE])); //esp0 de la TSS
     new_task_page = get_DIR(new_task);
     set_cr3(new_task_page);
     __asm__ __volatile__

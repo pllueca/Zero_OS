@@ -101,6 +101,7 @@ int ret_from_fork()
  * - se ha de asignar a el hijo un pid q no este ocupado (max_pid + 1) (4)
  * - al entrar en ejecucion el hijo ha de pasar por "ret_from_fork" para q retorne 0, y asi identificarlo como el proceso hijo (5)
  * - en algun momento de hace un flush de la tlb (set_cr3)
+ * - %ebp apunta a la posicion actual de la pila de kernel, si se le resta la direccion inicial obtenemos el desplazamiento de la pila 
  */
 int sys_fork()
 {
@@ -109,13 +110,13 @@ int sys_fork()
     struct list_head *l;
     struct task_struct *child, *parent;
     union task_union *child_union;
-    page_table_entry *child_page, *parent_page;
+    page_table_entry *child_page, *parent_page, *parent_dir;
     parent = current();
     PID = 123;
     if(list_empty(&free_queue) == 0)
     {
         /* (1) */
-      PID = 345;
+
         l = list_first(&free_queue);
         list_del(l);
         child = list_head_to_task_struct(l);
@@ -125,19 +126,17 @@ int sys_fork()
 
         parent_page = get_PT(parent);
 	allocDir_ret = allocate_DIR(child);
+        parent_dir = get_DIR(parent);
         child_page = get_PT(child);
         if(allocDir_ret == 1)
         {
-	  PID = 567;
             /* (3.1)  */
             for(i = 0; i < NUM_PAG_DATA; ++i)
             {
                 child_frame = alloc_frame(); 
                 if(child_frame != -1){
-		  PID = 789;
-
-		  set_ss_pag(parent_page, i, child_frame); /* (3.3) */
-		  set_ss_pag(child_page, i, child_frame); /* (3.2) */
+                    set_ss_pag(parent_page, i, child_frame); /* (3.3) */
+                    set_ss_pag(child_page, i, child_frame); /* (3.2) */
                 }
                 else
                 {
@@ -161,7 +160,12 @@ int sys_fork()
 	    PID_MAX = PID;
       
             /* (5) */
+            __asm__ __volatile__(
+                "movl %%ebp, %0;"
+                :"=g"(pos_act));
+
 	    child_union = (union task_union *) child;
+            pos_act = ebp - &(child_union -> stack[KERNEL_STACK_SIZE]);
 	    child_union -> stack[KERNEL_STACK_SIZE - 16] = ret_from_fork;
 	    child_union -> stack[KERNEL_STACK_SIZE - 17] = 0;
 	    child->kernel_esp =(int) &(child_union -> stack[KERNEL_STACK_SIZE - 17]);
