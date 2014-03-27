@@ -178,12 +178,11 @@ int sys_fork()
                 :"=g"(pos_act));
             
             child_union = (union task_union *) child;
-            pos_act = ( (int)&(child_union->stack[KERNEL_STACK_SIZE]) - pos_act)/4; 
+            pos_act = ( pos_act - (int)&(child_union))/4; 
             child_union -> stack[pos_act] = ret_from_fork;
             child_union -> stack[pos_act - 1] = 0;
             child->kernel_esp =(int) &(child_union -> stack[pos_act - 1]);
             list_add_tail(&(child->list), &ready_queue);
-
         }
         else
         {
@@ -194,7 +193,9 @@ int sys_fork()
     {
         /* no free pcb */
     }
+    task_switch(child_union);
     return PID;
+    
 }
 
 void sys_exit()

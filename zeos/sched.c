@@ -192,5 +192,6 @@ void switchReady()
 
     l = list_first(&ready_queue);
     new_task = lh2ts(l);    
+    list_del(l);
     task_switch(new_task);
 }
