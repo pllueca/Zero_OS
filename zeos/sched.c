@@ -181,3 +181,16 @@ void switchInit()
 {
     task_switch(init_task);
 }
+
+
+
+//pasa a ejecutar lo q haya en la 1a posicion de la readyqueue
+void switchReady()
+{
+    struct task_struct *new_task;
+    struct list_head *l;
+
+    l = list_first(&ready_queue);
+    new_task = lh2ts(l);    
+    task_switch(new_task);
+}

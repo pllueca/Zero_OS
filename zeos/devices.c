@@ -38,7 +38,7 @@ int keyboard_routine()
   if(act_t == 0){
     //switch to iddle
     act_t = 1;
-    switchIdle();
+    switchReady();
     
   }
   else if(act_t == 1){  //switch to init

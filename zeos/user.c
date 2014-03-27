@@ -16,8 +16,9 @@ main(void)
     c_pid = fork();
     while(1) 
     { 
-      itoa(c_pid,&buffer);
-      write(1,"pid\n",4);
-      write(1,buffer,strlen(buffer));
+        pid = getpid();
+        write(1,"pid\n",4);
+        itoa(pid,&buffer);
+        write(1,buffer,strlen(buffer));
     }
 }
