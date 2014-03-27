@@ -1,6 +1,6 @@
 #include <libc.h>
 
-int pid;
+int pid, c_pid;
 char buffer[32];
 
 
@@ -13,8 +13,11 @@ main(void)
     itoa(pid,&buffer);
     write(1,"pid\n",4);
     write(1,buffer,strlen(buffer));
+    c_pid = fork();
     while(1) 
     { 
-      
+      itoa(c_pid,&buffer);
+      write(1,"pid\n",4);
+      write(1,buffer,strlen(buffer));
     }
 }
