@@ -106,41 +106,48 @@ int sys_fork()
 {
     int PID, child_frame,
             allocDir_ret, i, dir_ini, dir_dest;
-    list_head *l;
-    task_struct *child, *parent;
-    task_union *child_union;
+    struct list_head *l;
+    struct task_struct *child, *parent;
+    union task_union *child_union;
     page_table_entry *child_page, *parent_page;
     parent = current();
+    PID = 123;
     if(list_empty(&free_queue) == 0)
     {
         /* (1) */
+      PID = 345;
         l = list_first(&free_queue);
         list_del(l);
         child = list_head_to_task_struct(l);
-        child_union = (union task_union *) child;
+	
         /* (2) */
         copy_data(parent,child, KERNEL_STACK_SIZE*4);
-        child_page = get_PT(child);
+
         parent_page = get_PT(parent);
-        if(allocDir_ret != 1)
+	allocDir_ret = allocate_DIR(child);
+        child_page = get_PT(child);
+        if(allocDir_ret == 1)
         {
+	  PID = 567;
             /* (3.1)  */
             for(i = 0; i < NUM_PAG_DATA; ++i)
             {
                 child_frame = alloc_frame(); 
-                if(child_frame >= 0){
-                    set_ss_pag(child_page,i,child_frame); /* (3.2) */
-                    set_ss_pag(parent_page, i, child_frame); /* (3.3) */
+                if(child_frame != -1){
+		  PID = 789;
+
+		  set_ss_pag(parent_page, i, child_frame); /* (3.3) */
+		  set_ss_pag(child_page, i, child_frame); /* (3.2) */
                 }
                 else
                 {
+		  
                 }
             }
- 
             dir_ini = L_USER_START + ((NUM_PAG_CODE) * PAGE_SIZE);
-            dir_dest = dir_ini +  NUM_PAG_DATA * PAGE_SIZE;
+            dir_dest = dir_ini + (NUM_PAG_DATA * PAGE_SIZE);
             /* (3) */
-            copy_data(dir_ini, dir_dest, NUM_PAG_DATA * PAGE_SIZE);
+	    copy_data(dir_ini, dir_dest, NUM_PAG_DATA * PAGE_SIZE);
 
             /* (3.4)  */
             for(i = 0; i < NUM_PAG_DATA; ++i)
@@ -149,16 +156,17 @@ int sys_fork()
             }
 
             /* (4) */
-            PID = PID_MAX + 1;  // no hay PIDs repetidos
-            PID_MAX = PID;
+	    PID = PID_MAX + 1;
             child -> PID = PID;
+	    PID_MAX = PID;
       
             /* (5) */
-            child_union -> stack[KERNEL_STACK_SIZE - 16] = ret_from_fork;
-            child_union -> stack[KERNEL_STACK_SIZE - 17] = 0;
-            child->kernel_esp =(int) &(child_union -> stack[KERNEL_STACK_SIZE - 17]);
-            list_add_tail(child->list, &freequeue);
-            return PID;
+	    child_union = (union task_union *) child;
+	    child_union -> stack[KERNEL_STACK_SIZE - 16] = ret_from_fork;
+	    child_union -> stack[KERNEL_STACK_SIZE - 17] = 0;
+	    child->kernel_esp =(int) &(child_union -> stack[KERNEL_STACK_SIZE - 17]);
+            list_add_tail(&(child->list), &ready_queue);
+
         }
         else
         {
@@ -169,6 +177,7 @@ int sys_fork()
     {
         /* no free pcb */
     }
+    return PID;
 }
 
 void sys_exit()
