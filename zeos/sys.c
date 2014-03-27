@@ -101,22 +101,20 @@ int ret_from_fork()
  * - se ha de asignar a el hijo un pid q no este ocupado (max_pid + 1) (4)
  * - al entrar en ejecucion el hijo ha de pasar por "ret_from_fork" para q retorne 0, y asi identificarlo como el proceso hijo (5)
  * - en algun momento de hace un flush de la tlb (set_cr3)
- * - %ebp apunta a la posicion actual de la pila de kernel, si se le resta la direccion inicial obtenemos el desplazamiento de la pila 
  */
 int sys_fork()
 {
     int PID, child_frame,
-            allocDir_ret, i, dir_ini, dir_dest;
+            allocDir_ret, i, dir_ini, dir_dest, pos_act;
     struct list_head *l;
     struct task_struct *child, *parent;
     union task_union *child_union;
-    page_table_entry *child_page, *parent_page, *parent_dir;
+    page_table_entry *child_page, *parent_page;
     parent = current();
-    PID = 123;
     if(list_empty(&free_queue) == 0)
     {
+        //parent_dir = get_DIR(parent);
         /* (1) */
-
         l = list_first(&free_queue);
         list_del(l);
         child = list_head_to_task_struct(l);
@@ -125,50 +123,65 @@ int sys_fork()
         copy_data(parent,child, KERNEL_STACK_SIZE*4);
 
         parent_page = get_PT(parent);
-	allocDir_ret = allocate_DIR(child);
-        parent_dir = get_DIR(parent);
+        allocDir_ret = allocate_DIR(child);
+       
         child_page = get_PT(child);
+  
         if(allocDir_ret == 1)
         {
             /* (3.1)  */
-            for(i = 0; i < NUM_PAG_DATA; ++i)
-            {
+            for(i = NUM_PAG_KERNEL; i < NUM_PAG_DATA+NUM_PAG_KERNEL; ++i)
+            {               
                 child_frame = alloc_frame(); 
                 if(child_frame != -1){
-                    set_ss_pag(parent_page, i, child_frame); /* (3.3) */
-                    set_ss_pag(child_page, i, child_frame); /* (3.2) */
+
+                
+                    set_ss_pag(parent_page, i+(NUM_PAG_CODE+NUM_PAG_DATA), child_frame); /* (3.3) */
+                
+                    set_ss_pag(child_page, i+(NUM_PAG_CODE), child_frame); /* (3.2) */
+             
+
                 }
                 else
                 {
 		  
                 }
             }
-            dir_ini = L_USER_START + ((NUM_PAG_CODE) * PAGE_SIZE);
-            dir_dest = dir_ini + (NUM_PAG_DATA * PAGE_SIZE);
+            dir_ini = L_USER_START + (NUM_PAG_CODE)*PAGE_SIZE;
+            dir_dest = L_USER_START+(NUM_PAG_CODE+NUM_PAG_DATA)*PAGE_SIZE;
+            //dir_dest = dir_ini + (NUM_PAG_DATA * PAGE_SIZE);
             /* (3) */
-	    copy_data(dir_ini, dir_dest, NUM_PAG_DATA * PAGE_SIZE);
+              
+            
+
+            
+            copy_data(dir_ini, dir_dest, NUM_PAG_DATA * PAGE_SIZE);
+            sys_write(1,"aaa\n", 4); 
 
             /* (3.4)  */
-            for(i = 0; i < NUM_PAG_DATA; ++i)
+            for(i = NUM_PAG_KERNEL; i < NUM_PAG_DATA+NUM_PAG_KERNEL; ++i)
             {
-                del_ss_pag(parent_page, i); 
+                del_ss_pag(parent_page, i+(NUM_PAG_CODE+NUM_PAG_DATA)); 
             }
-
+            set_cr3(get_DIR(parent));
             /* (4) */
-	    PID = PID_MAX + 1;
+            PID = PID_MAX + 1;
             child -> PID = PID;
-	    PID_MAX = PID;
+            PID_MAX = PID;
       
             /* (5) */
-            __asm__ __volatile__(
-                "movl %%ebp, %0;"
-                :"=g"(pos_act));
 
-	    child_union = (union task_union *) child;
-            pos_act = ebp - &(child_union -> stack[KERNEL_STACK_SIZE]);
-	    child_union -> stack[KERNEL_STACK_SIZE - 16] = ret_from_fork;
-	    child_union -> stack[KERNEL_STACK_SIZE - 17] = 0;
-	    child->kernel_esp =(int) &(child_union -> stack[KERNEL_STACK_SIZE - 17]);
+
+        
+            __asm__ __volatile__(
+                "movl %%ebp,%0;"
+                :"=g"(pos_act));
+            
+            child_union = (union task_union *) child;
+            pos_act = ( (int)&(child_union->stack[KERNEL_STACK_SIZE]) - pos_act)/4; 
+            child_union -> stack[pos_act] = ret_from_fork;
+            child_union -> stack[pos_act - 1] = 0;
+            child->kernel_esp =(int) &(child_union -> stack[pos_act - 1]);
             list_add_tail(&(child->list), &ready_queue);
 
         }
