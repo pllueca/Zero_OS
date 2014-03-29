@@ -182,16 +182,11 @@ void switchInit()
     task_switch(init_task);
 }
 
-
-
-//pasa a ejecutar lo q haya en la 1a posicion de la readyqueue
-void switchReady()
+/* scheduling policy */
+void sched_next_rr()
 {
-    struct task_struct *new_task;
-    struct list_head *l;
-
-    l = list_first(&ready_queue);
-    new_task = lh2ts(l);    
-    list_del(l);
-    task_switch(new_task);
+    
 }
+void update_current_state_rr(struct list_head *dest);
+int needs_sched_rr();
+void update_sched_data_rr();
