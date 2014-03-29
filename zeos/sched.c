@@ -96,6 +96,12 @@ void init_task1(void)
     task1_dir = get_DIR(init_task);
     set_cr3(task1_dir);
     setTSS_tswitch((int)&((union task_union *)init_task)->stack[KERNEL_STACK_SIZE]); //esp0 de la TSS
+    init_task->task_stats.user_ticks = 0;
+    init_task->task_stats.system_ticks = 0;
+    init_task->task_stats.elapsed_total_ticks = 0;
+    init_task->task_stats.total_trans = 0;
+    
+    
 }
 
 
@@ -171,7 +177,7 @@ void inner_task_switch(union task_union* new)
 }
 
 
-/* canvia la taska actual x idle */
+/* canvia la task actual x idle */
 void switchIdle()
 {
     task_switch(idle_task);
@@ -201,4 +207,14 @@ int needs_sched_rr()
 void update_sched_data_rr()
 {
     
+}
+
+int get_quantum (struct task_struct * t)
+{
+    return t->quantum;
+}
+
+void set_quantum(struct task_struct * t, int new_quantum)
+{
+    t->quantum = new_quantum;
 }

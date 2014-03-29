@@ -16,16 +16,18 @@
 enum state_t { ST_RUN, ST_READY, ST_BLOCKED };
 
 struct task_struct {
-  int PID;			/* Process ID */
-  page_table_entry * dir_pages_baseAddr;
-  int quantum;
-  int kernel_esp;
-  struct list_head list;
+    int PID;			/* Process ID */
+    page_table_entry * dir_pages_baseAddr;
+    int quantum;
+    int kernel_esp;
+    struct list_head list;
+    struct stats task_stats;
+    enum state_t task_state;
 };
 
 union task_union {
-  struct task_struct task;
-  unsigned long stack[KERNEL_STACK_SIZE];    /* pila de sistema, per procés */
+    struct task_struct task;
+    unsigned long stack[KERNEL_STACK_SIZE];    /* pila de sistema, per procés */
 };
 
 extern union task_union task[NR_TASKS]; /* Vector de tasques */
@@ -74,5 +76,9 @@ void sched_next_rr();
 void update_current_state_rr(struct list_head *dest);
 int needs_sched_rr();
 void update_sched_data_rr();
+
+/* quantum */
+int get_quantum (struct task_struct * t);
+void set_quantum(struct task_struct * t, int new_quantum);
 
 #endif  /* __SCHED_H__ */

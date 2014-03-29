@@ -186,8 +186,16 @@ int sys_fork()
     child_union -> stack[pos_act + 1] = 0;
     child->kernel_esp =(unsigned int) &(child_union -> stack[pos_act + 1]);
     list_add_tail(&child->list, &ready_queue);
-        
-    task_switch(child_union);
+    
+
+    /* inicialitzacions x el scheduling */
+    child->task_stats.user_ticks = 0;
+    child->task_stats.system_ticks = 0;
+    child->task_stats.total_elapsed_ticks = 0;
+    child->task_stats.total_trans = 0;
+    child->task_state = ST_READY;
+
+    //    task_switch(child_union);
     return PID;
 }
 
