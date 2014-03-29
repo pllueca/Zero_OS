@@ -197,8 +197,10 @@ void set_ini_stats(struct task_struct *t)
     t->task_stats.system_ticks = 0;
     t->task_stats.elapsed_total_ticks = 0;
     t->task_stats.total_trans = 0;
-    t->task_state = ST_READY;
+    t->t_state = ST_READY;
+    t->task_stats.remaining_ticks = INITIAL_QUANTUM;
 }
+
 
 void sched_next_rr()
 {
