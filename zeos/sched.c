@@ -207,6 +207,7 @@ void sched_next_rr()
     
 }
 
+
 void update_current_state_rr(struct list_head *dest)
 {
     
@@ -214,12 +215,17 @@ void update_current_state_rr(struct list_head *dest)
 
 int needs_sched_rr()
 {
-    
+    if(get_quantum(current()) <= 0)
+    {
+        return 1;
+    }
+    return 0;
 }
 
 void update_sched_data_rr()
 {
-    
+    int quantum_act = get_quantum(current());
+    set_quantum(current(), --quantum_act);
 }
 
 int get_quantum (struct task_struct * t)
