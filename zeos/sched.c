@@ -189,6 +189,17 @@ void switchInit()
 }
 
 /* scheduling policy */
+
+/* inicializa las estadisticas de una task */
+void set_ini_stats(struct task_struct *t)
+{
+    t->task_stats.user_ticks = 0;
+    t->task_stats.system_ticks = 0;
+    t->task_stats.elapsed_total_ticks = 0;
+    t->task_stats.total_trans = 0;
+    t->task_state = ST_READY;
+}
+
 void sched_next_rr()
 {
     

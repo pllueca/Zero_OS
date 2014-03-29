@@ -90,6 +90,11 @@ int ret_from_fork()
     return 0;
 }
 
+/* el pcb que recibe como parametro vuelve a estar en la ready_queue */
+void free_PCB(struct task_struct *t)
+{
+    list_add(&t->list, &free_queue);
+}
 
 /*
  * crea un proceso hijo identico al padre
@@ -102,8 +107,8 @@ int ret_from_fork()
  * - para esto se reservan NUM_PAG_DATA frames para el hijo (3.1), que se mapean en la tabla de paginas del padre(3.2) i del hijo(3.3)
  * - al acabar de copiar los datos se liberan las paginas del hijo de la tabla de paginas del padre (3.4)
  * - se ha de asignar a el hijo un pid q no este ocupado (max_pid + 1) (4)
- * - al entrar en ejecucion el hijo ha de pasar por "ret_from_fork" para q retorne 0, y asi identificarlo como el proceso hijo (5)
- * - en algun momento de hace un flush de la tlb (set_cr3)
+ * - al entrar en ejecucion el hijo ha de pasar por "ret_from_fork" para q retorne 0, y asi identificarlo como el proceso hijo(5)
+ * - actualizar la TLB (setcr3) (6)
  */
 int sys_fork()
 {
@@ -114,10 +119,10 @@ int sys_fork()
     struct task_struct *child, *parent;
     union task_union *child_union;
     page_table_entry *child_page, *parent_page;
-    parent = current();
+
     if(list_empty(&free_queue) != 0)
     {
-        /* NO FREE PCBs */
+        return -ENFPCB;
     }
     /* (1) */
     l = list_first(&free_queue);
@@ -125,30 +130,33 @@ int sys_fork()
     child = list_head_to_task_struct(l);
 	
     /* (2) */
+    parent = current();
     copy_data(parent,child, KERNEL_STACK_SIZE*4);
 
     parent_page = get_PT(parent);
     allocDir_ret = allocate_DIR(child);
-       
-    child_page = get_PT(child);
-  
+
     if(allocDir_ret != 1)
     {
-        // child directory not allocated
+        free_PCB(child);
+        return -EDNALL;
     }
-    /* (3.0) */
+
+    child_page = get_PT(child);
+
     for(i = 0; i < NUM_PAG_CODE; i++)
     {
         parent_frame = get_frame(parent_page, i + NUM_PAG_KERNEL);
-        set_ss_pag(child_page, i + NUM_PAG_KERNEL, parent_frame);
+        set_ss_pag(child_page, i + NUM_PAG_KERNEL, parent_frame);     /* (3.0) */
     }
-    /* (3.1)  */
+
     for(i = 0; i < NUM_PAG_DATA; i++)
     {
-        child_frames[i] = alloc_frame();
+        child_frames[i] = alloc_frame();      /* (3.1)  */
         if(child_frames[i] == -1){
-            while(i >= 0)//alliberem els frames usats
+            while(i >= 0) 
                 free_frame(child_frames[i--]);
+            free_PCB(child);
             return -ENOMEM;
         }
     }
@@ -160,20 +168,18 @@ int sys_fork()
     }
 
     dir_ini = L_USER_START + (NUM_PAG_CODE)*PAGE_SIZE;
-    dir_dest = L_USER_START+(NUM_PAG_CODE+NUM_PAG_DATA)*PAGE_SIZE;
+    dir_dest = L_USER_START+(NUM_PAG_CODE+NUM_PAG_DATA)*PAGE_SIZE;         
+    copy_data(dir_ini, dir_dest, NUM_PAG_DATA * PAGE_SIZE);     /* (3) */   
 
-    /* (3) */            
-    copy_data(dir_ini, dir_dest, NUM_PAG_DATA * PAGE_SIZE);
-
-    /* (3.4)  */
     for(i = NUM_PAG_KERNEL; i < NUM_PAG_DATA+NUM_PAG_KERNEL; ++i)
     {
-        del_ss_pag(parent_page, i+(NUM_PAG_CODE+NUM_PAG_DATA)); 
+        del_ss_pag(parent_page, i+(NUM_PAG_CODE+NUM_PAG_DATA));      /* (3.4)  */
     }
-    set_cr3(get_DIR(parent));
-    /* (4) */
+
+    set_cr3(get_DIR(parent)); /* (6) */
+
     PID = PID_MAX + 1;
-    child -> PID = PID;
+    child -> PID = PID;      /* (4) */
     PID_MAX = PID;
 
     __asm__ __volatile__
@@ -184,20 +190,19 @@ int sys_fork()
             
     child_union = (union task_union *) child;
     pos_act = ((unsigned int)pos_act - (unsigned int)parent) / 4; 
-    child_union -> stack[pos_act] = (unsigned int) ret_from_fork;
+    child_union -> stack[pos_act] = (unsigned int) ret_from_fork; /* (5) */
     child_union -> stack[pos_act-1] = 0;
     child->kernel_esp =(unsigned int) &(child_union -> stack[pos_act-1]);
-    list_add_tail(&child->list, &ready_queue);
     
-
     /* inicialitzacions x el scheduling */
-    child->task_stats.user_ticks = 0;
-    child->task_stats.system_ticks = 0;
-    child->task_stats.total_elapsed_ticks = 0;
-    child->task_stats.total_trans = 0;
-    child->task_state = ST_READY;
+    set_ini_stats(child);
+    list_add_tail(&child->list, &ready_queue);
 
-    //    task_switch(child_union);
+    /* 
+       Test fork 
+       task_switch(child_union);
+    */
+
     return PID;
 }
 

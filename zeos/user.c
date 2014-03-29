@@ -23,9 +23,5 @@ main(void)
     }
     while(1) 
     { 
-        pid = getpid();
-        write(1,"pid\n",4);
-        itoa(pid,&buffer);
-        write(1,buffer,strlen(buffer));
     }
 }
