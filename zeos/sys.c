@@ -13,6 +13,8 @@
 
 #include <sched.h>
 
+#include <errno.h>
+
 #define LECTURA 0
 #define ESCRIPTURA 1
 #define MAX_WRITE 128
@@ -21,14 +23,14 @@ int PID_MAX = 1;
 
 int check_fd(int fd, int permissions)
 {
-    if (fd!=1) return -9; /*EBADF*/
-    if (permissions!=ESCRIPTURA) return -13; /*EACCES*/
+    if (fd!=1) return -EBADF; /*EBADF*/
+    if (permissions!=ESCRIPTURA) return -EACCES; /*EACCES*/
     return 0;
 }
 
 int sys_ni_syscall()
 {
-    return -38; /*ENOSYS*/
+    return -ENOSYS; /*ENOSYS*/
 }
 
 
@@ -59,11 +61,11 @@ int sys_write(int fd,char * buffer, int size)
                 }
                 if(size == 0) return written;  //tot ok
             }
-            return -22; //size< 0
+            return -EINVAL; //size< 0
         }
-        return -14; //not null
+        return -EFAULT; //not null
     }
-    return -9; // fd not valid
+    return -EBADF; // fd not valid
 }
 
 
@@ -182,9 +184,9 @@ int sys_fork()
             
     child_union = (union task_union *) child;
     pos_act = ((unsigned int)pos_act - (unsigned int)parent) / 4; 
-    child_union -> stack[pos_act] = (unsigned int) &ret_from_fork;
-    child_union -> stack[pos_act + 1] = 0;
-    child->kernel_esp =(unsigned int) &(child_union -> stack[pos_act + 1]);
+    child_union -> stack[pos_act] = (unsigned int) ret_from_fork;
+    child_union -> stack[pos_act-1] = 0;
+    child->kernel_esp =(unsigned int) &(child_union -> stack[pos_act-1]);
     list_add_tail(&child->list, &ready_queue);
     
 
