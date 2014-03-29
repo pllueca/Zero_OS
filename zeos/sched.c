@@ -54,8 +54,8 @@ void cpu_idle(void)
     __asm__ __volatile__("sti": : :"memory");
     while(1)
     {
-      printk("a");
-      printk("\n");
+        printk("a");
+        printk("\n");
     }
 }
 
@@ -187,6 +187,18 @@ void sched_next_rr()
 {
     
 }
-void update_current_state_rr(struct list_head *dest);
-int needs_sched_rr();
-void update_sched_data_rr();
+
+void update_current_state_rr(struct list_head *dest)
+{
+    
+}
+
+int needs_sched_rr()
+{
+    
+}
+
+void update_sched_data_rr()
+{
+    
+}

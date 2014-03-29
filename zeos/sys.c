@@ -107,7 +107,7 @@ int sys_fork()
 {
     int PID, child_frame, parent_frame,
             allocDir_ret, i, dir_ini, dir_dest, pos_act;
-    int frames_child[NUM_PAG_DATA];
+    int child_frames[NUM_PAG_DATA];
     struct list_head *l;
     struct task_struct *child, *parent;
     union task_union *child_union;
