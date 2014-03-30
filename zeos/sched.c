@@ -208,11 +208,18 @@ void sched_next_rr()
 }
 
 
+/*
+ * expulsa a la task actual de la cpu, la inserta en la readyqueue y hace task switch 
+ * a la primera de la ready queue
+ */
 void update_current_state_rr(struct list_head *dest)
 {
-    
+    struct task_struct *current_task, *new_task;
 }
 
+/*
+ * si a la task actual se le ha acabado el quantum ha de ser expulsada de la CPU
+ */
 int needs_sched_rr()
 {
     if(get_quantum(current()) <= 0)
