@@ -12,7 +12,7 @@
 
 #define NR_TASKS      10
 #define KERNEL_STACK_SIZE	1024
-#define INITIAL_QUANTUM
+#define INITIAL_QUANTUM  18
 
 enum state_t { ST_RUN, ST_READY, ST_BLOCKED };
 
@@ -37,6 +37,8 @@ struct task_struct *init_task;
 
 struct list_head free_queue;
 struct list_head ready_queue;
+
+int CPU_QUANTUM;
 
 
 int act_t; /* 0-> init, 1-> idle*/

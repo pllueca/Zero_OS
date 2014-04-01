@@ -115,11 +115,14 @@ extern int zeos_ticks;
 int clock_routine()
 {
     ++zeos_ticks;
-    update_sched_data_rr();
-    if(needs_sched_rr())
+
+    update_sched_data_rr(); //resta quantum
+
+    if(needs_sched_rr() == 1 && zeos_ticks > 0)
     {
-        //cal posar lactual a la ready queue i canviar la task de la CPU
-        update_current_state_rr(&ready_queue);
+      //cal posar lactual a la ready queue i canviar la task de la CPU
+      update_current_state_rr(&ready_queue);
+      sched_next_rr();
     }
     zeos_show_clock();
     return 0;

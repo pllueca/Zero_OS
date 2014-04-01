@@ -96,6 +96,7 @@ void init_task1(void)
     task1_dir = get_DIR(init_task);
     set_cr3(task1_dir);
     setTSS_tswitch((int)&((union task_union *)init_task)->stack[KERNEL_STACK_SIZE]); //esp0 de la TSS
+    init_task->quantum = INITIAL_QUANTUM;
     init_task->task_stats.user_ticks = 0;
     init_task->task_stats.system_ticks = 0;
     init_task->task_stats.elapsed_total_ticks = 0;
@@ -193,28 +194,49 @@ void switchInit()
 /* inicializa las estadisticas de una task */
 void set_ini_stats(struct task_struct *t)
 {
-    t->task_stats.user_ticks = 0;
-    t->task_stats.system_ticks = 0;
-    t->task_stats.elapsed_total_ticks = 0;
-    t->task_stats.total_trans = 0;
-    t->t_state = ST_READY;
-    t->task_stats.remaining_ticks = INITIAL_QUANTUM;
+  
+  t->task_stats.user_ticks = 0;
+  t->task_stats.system_ticks = 0;
+  t->task_stats.elapsed_total_ticks = 0;
+  t->task_stats.total_trans = 0;
+  t->t_state = ST_READY;
+  t->task_stats.remaining_ticks = INITIAL_QUANTUM;
+  
 }
 
-
-void sched_next_rr()
+void add_user_ticks(struct task_struct *t)
 {
-    
 }
 
 
 /*
- * expulsa a la task actual de la cpu, la inserta en la readyqueue y hace task switch 
- * a la primera de la ready queue
+ * realiza el task switch
+ */
+void sched_next_rr()
+{
+  struct task_struct *next;
+  struct list_head *l_next;
+  
+  if(list_empty(&ready_queue)){
+    task_switch(idle_task);
+  }
+  else{
+    l_next = list_first(&ready_queue);
+    list_del(l_next);
+    next = lh2ts(l_next);
+    CPU_QUANTUM = next->quantum;
+    task_switch((union task_union*)next);
+  }
+}
+
+/*
+ * 
  */
 void update_current_state_rr(struct list_head *dest)
 {
-    struct task_struct *current_task, *new_task;
+  struct task_struct *act;
+  act = current();
+  list_add_tail(&act->list,dest);
 }
 
 /*
@@ -222,17 +244,16 @@ void update_current_state_rr(struct list_head *dest)
  */
 int needs_sched_rr()
 {
-    if(get_quantum(current()) <= 0)
+    if(CPU_QUANTUM <= 0)
     {
-        return 1;
+      return 1;
     }
     return 0;
 }
 
 void update_sched_data_rr()
 {
-    int quantum_act = get_quantum(current());
-    set_quantum(current(), --quantum_act);
+  --CPU_QUANTUM;
 }
 
 int get_quantum (struct task_struct * t)

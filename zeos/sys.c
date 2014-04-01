@@ -87,7 +87,7 @@ int sys_getpid()
  */
 int ret_from_fork()
 {
-    return 0;
+  return 0;
 }
 
 /* el pcb que recibe como parametro vuelve a estar en la ready_queue */
@@ -208,4 +208,17 @@ int sys_fork()
 
 void sys_exit()
 {  
+  struct task_struct *act;
+  page_table_entry *act_pag;
+  int i, frame_act;
+  act = current();
+  act_pag = get_PT(act);
+  for(i = 0; i < NUM_PAG_DATA; i++)
+    {
+      frame_act = get_frame(act_pag, NUM_PAG_KERNEL+NUM_PAG_CODE + i);
+      free_frame(frame_act);
+    }
+  update_current_state_rr(&free_queue);
+  sched_next_rr();
+  
 }
