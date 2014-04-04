@@ -36,8 +36,8 @@ extern union task_union task[NR_TASKS]; /* Vector de tasques */
 struct task_struct *idle_task;
 struct task_struct *init_task;
 
-struct list_head free_queue;
-struct list_head ready_queue;
+struct list_head freequeue;
+struct list_head readyqueue;
 
 int CPU_QUANTUM;
 

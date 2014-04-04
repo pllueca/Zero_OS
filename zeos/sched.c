@@ -54,8 +54,7 @@ void cpu_idle(void)
     __asm__ __volatile__("sti": : :"memory");
     while(1)
     {
-        printk("a");
-        printk("\n");
+
     }
 }
 
@@ -64,18 +63,20 @@ void init_idle (void)
     int e;
     struct list_head *l;
     union task_union *idle_stack;
-    l = list_first(&free_queue);
+    l = list_first(&freequeue);
     list_del(l);
     idle_task = lh2ts(l);
     idle_task-> PID = 0;
     idle_task->kernel_esp = KERNEL_ESP((union task_union *) idle_task) - 8;
     e = allocate_DIR(idle_task);
-    idle_stack = (union task_union*) idle_task;
-    idle_stack->stack[KERNEL_STACK_SIZE - 1] = cpu_idle; 
-    idle_stack->stack[KERNEL_STACK_SIZE - 2] = 0;   // dummy
     if(e != 1){
         //restaurar &l a la free queue
     }
+	else{
+	    idle_stack = (union task_union*) idle_task;
+	    idle_stack->stack[KERNEL_STACK_SIZE - 1] = cpu_idle; 
+	    idle_stack->stack[KERNEL_STACK_SIZE - 2] = 0;   // dummy
+	}
 }
 
 void init_task1(void)
@@ -83,26 +84,28 @@ void init_task1(void)
     int e;
     struct page_table_entry *task1_dir;
     struct list_head *l;
-    l = list_first(&free_queue);
+    l = list_first(&freequeue);
     list_del(l);
     init_task = lh2ts(l);
     init_task -> PID = 1;
     init_task -> kernel_esp = KERNEL_ESP((union task_union *)init_task);
     e = allocate_DIR(init_task);
     if (e != 1) {
-        /*pinch*/
+       // return -EDNALL;
     }
-    set_user_pages(init_task);
-    task1_dir = get_DIR(init_task);
-    set_cr3(task1_dir);
-    setTSS_tswitch((int)&((union task_union *)init_task)->stack[KERNEL_STACK_SIZE]); //esp0 de la TSS
-    init_task->quantum = INITIAL_QUANTUM;
-    init_task->statics.user_ticks = 0;
-    init_task->statics.system_ticks = 0;
-    init_task->statics.elapsed_total_ticks = 0;
-    init_task->statics.total_trans = 0;
+	else{
+	    set_user_pages(init_task);
+	    task1_dir = get_DIR(init_task);
 
-    
+	    setTSS_tswitch((int)&((union task_union *)init_task)->stack[KERNEL_STACK_SIZE]); //esp0 de la TSS
+	    set_cr3(task1_dir);
+	    init_task->quantum = INITIAL_QUANTUM;
+	    init_task->statics.user_ticks = 0;
+	    init_task->statics.system_ticks = 0;
+	    init_task->statics.elapsed_total_ticks = 0;
+	    init_task->statics.total_trans = 0;
+	}
+	    
     
 }
 
@@ -111,10 +114,10 @@ void init_sched()
 {
     int i;
     act_t = 0;
-    INIT_LIST_HEAD(&free_queue);
-    INIT_LIST_HEAD(&ready_queue);
+    INIT_LIST_HEAD(&freequeue);
+    INIT_LIST_HEAD(&readyqueue);
     for(i=0; i< NR_TASKS; i++) 
-        list_add(&task[i].task.list, &free_queue);
+        list_add(&task[i].task.list, &freequeue);
 }
 
 struct task_struct* current()
@@ -218,11 +221,11 @@ void sched_next_rr()
   struct task_struct *next;
   struct list_head *l_next;
   
-  if(list_empty(&ready_queue)){
+  if(list_empty(&readyqueue)){
     task_switch(idle_task);
   }
   else{
-    l_next = list_first(&ready_queue);
+    l_next = list_first(&readyqueue);
     list_del(l_next);
     next = lh2ts(l_next);
     CPU_QUANTUM = next->quantum;
@@ -328,7 +331,7 @@ int getStatPID(int pid, struct stats *st)
 	struct list_head *l;
     struct stats current_s;	
 	int i;
-	list_for_each(l, &ready_queue){
+	list_for_each(l, &readyqueue){
 		act = lh2ts(l);
 		if(act->PID == pid)
 		{

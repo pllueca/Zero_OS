@@ -101,10 +101,10 @@ int ret_from_fork()
   return 0;
 }
 
-/* el pcb que recibe como parametro vuelve a estar en la ready_queue */
+/* el pcb que recibe como parametro vuelve a estar en la readyqueue */
 void free_PCB(struct task_struct *t)
 {
-    list_add(&t->list, &free_queue);
+    list_add(&t->list, &freequeue);
 }
 
 /*
@@ -131,13 +131,13 @@ int sys_fork()
     union task_union *child_union;
     page_table_entry *child_page, *parent_page;
 	act_ticks_user2kernel();
-    if(list_empty(&free_queue) != 0)
+    if(list_empty(&freequeue) != 0)
     {
 		act_ticks_kernel2user();
         return -ENFPCB;
     }
     /* (1) */
-    l = list_first(&free_queue);
+    l = list_first(&freequeue);
     list_del(l);
     child = list_head_to_task_struct(l);
 	
@@ -210,7 +210,7 @@ int sys_fork()
     
     /* inicialitzacions x el scheduling */
     set_ini_stats(child);
-    list_add_tail(&child->list, &ready_queue);
+    list_add_tail(&child->list, &readyqueue);
 
     /* 
        Test fork 
@@ -233,7 +233,7 @@ void sys_exit()
       frame_act = get_frame(act_pag, NUM_PAG_KERNEL+NUM_PAG_CODE + i);
       free_frame(frame_act);
     }
-  update_current_state_rr(&free_queue);
+  update_current_state_rr(&freequeue);
   sched_next_rr();
 	act_ticks_kernel2user();
   

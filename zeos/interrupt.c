@@ -93,7 +93,7 @@ void setIdt()
   setTrapHandler(0x80, system_call_handler, 3);
 }
 
-extern struct list_head ready_queue;
+extern struct list_head readyqueue;
 
 int keyboard_routine()
 {
@@ -121,7 +121,7 @@ int clock_routine()
     if(needs_sched_rr() == 1 && zeos_ticks > 0)
     {
       //cal posar lactual a la ready queue i canviar la task de la CPU
-      update_current_state_rr(&ready_queue);
+      update_current_state_rr(&readyqueue);
       sched_next_rr();
     }
     zeos_show_clock();

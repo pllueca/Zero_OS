@@ -102,6 +102,7 @@ int __attribute__((__section__(".text.main")))
    * We return from a 'theorical' call to a 'call gate' to reduce our privileges
    * and going to execute 'magically' at 'usr_main'...
    */
+	zeos_init_auxjp();
   return_gate(__USER_DS, __USER_DS, USER_ESP, __USER_CS, L_USER_START);
 
   /* The execution never arrives to this point */
