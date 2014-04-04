@@ -18,13 +18,13 @@ main(void)
 	{
 	  write(1,"hijo!\n",6);
 	  //	  c_pid = fork();
-	  exit();
+	 // exit();
 
 	}
       else if(c_pid > 0)
 	{
 	  write(1,"er papa\n",8);  
-	  exit(); 
+	  //exit(); 
 	}
       else
 	{

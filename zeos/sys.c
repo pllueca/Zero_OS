@@ -36,6 +36,7 @@ int sys_ni_syscall()
 
 int sys_write(int fd,char * buffer, int size)
 {
+	act_ticks_user2kernel();
     if(check_fd(fd, 1) >= 0)
     {
         if(buffer != NULL) {
@@ -59,12 +60,18 @@ int sys_write(int fd,char * buffer, int size)
                     written += w;
                     size -= w;
                 }
-                if(size == 0) return written;  //tot ok
+                if(size == 0) {
+					return written;  //tot ok
+					act_ticks_kernel2user();
+				}
             }
+			act_ticks_kernel2user();
             return -EINVAL; //size< 0
         }
+		act_ticks_kernel2user();
         return -EFAULT; //not null
     }
+	act_ticks_kernel2user();
     return -EBADF; // fd not valid
 }
 
@@ -73,11 +80,15 @@ extern int zeos_ticks ;
 
 int sys_gettime()
 {
+	act_ticks_user2kernel();
+	act_ticks_kernel2user();
     return zeos_ticks;
 }
 
 int sys_getpid()
 {
+	act_ticks_user2kernel();
+	act_ticks_kernel2user();
     return current()->PID;
 }
 
@@ -119,9 +130,10 @@ int sys_fork()
     struct task_struct *child, *parent;
     union task_union *child_union;
     page_table_entry *child_page, *parent_page;
-
+	act_ticks_user2kernel();
     if(list_empty(&free_queue) != 0)
     {
+		act_ticks_kernel2user();
         return -ENFPCB;
     }
     /* (1) */
@@ -139,6 +151,7 @@ int sys_fork()
     if(allocDir_ret != 1)
     {
         free_PCB(child);
+			act_ticks_kernel2user();
         return -EDNALL;
     }
 
@@ -157,6 +170,7 @@ int sys_fork()
             while(i >= 0) 
                 free_frame(child_frames[i--]);
             free_PCB(child);
+			act_ticks_kernel2user();
             return -ENOMEM;
         }
     }
@@ -202,12 +216,13 @@ int sys_fork()
        Test fork 
        task_switch(child_union);
     */
-
+	act_ticks_kernel2user();
     return PID;
 }
 
 void sys_exit()
 {  
+	act_ticks_user2kernel();
   struct task_struct *act;
   page_table_entry *act_pag;
   int i, frame_act;
@@ -220,5 +235,25 @@ void sys_exit()
     }
   update_current_state_rr(&free_queue);
   sched_next_rr();
+	act_ticks_kernel2user();
   
 }
+
+int sys_get_stats(int pid, struct stats *st)
+{
+	int err;
+	if(current()->PID == pid)
+	{
+		st = &(current()->statics);
+		return 0;
+	}
+	else
+	{
+		err = getStatPID(pid,st);
+		if(err == -1){
+			return err;
+		}
+		return 0;
+	}
+}
+

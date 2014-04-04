@@ -138,3 +138,35 @@ int fork()
 			  );
     return pid_child;
 }
+
+void exit()
+{
+  __asm__ __volatile__(
+		       "movl $1, %eax;"
+		       "int $0x80;"
+		       );
+
+}
+
+int get_stats(int pid, struct stats *st)
+{
+    int e;
+    __asm__ __volatile__ (
+        "pushl %%ebx ;"
+        "movl 8(%%ebp),%%ebx ;"
+        "movl 12(%%ebp),%%ecx ;"
+        "movl $35, %%eax;"
+        "int $0x80;"
+        "popl %%ebx;" 
+        "movl %%eax, %0"
+        :"=g" (e)
+                          );
+
+    if(e < 0){
+        errno = abs(e);
+        return -1;
+    }
+    return 0;
+	
+}
+

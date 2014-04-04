@@ -9,6 +9,7 @@
 #include <types.h>
 #include <mm_address.h>
 #include <libc.h>
+#include <stats.h>
 
 #define NR_TASKS      10
 #define KERNEL_STACK_SIZE	1024
@@ -22,7 +23,7 @@ struct task_struct {
     int quantum;
     int kernel_esp;
     struct list_head list;
-    struct stats task_stats;
+    struct stats statics;
     enum state_t t_state;
 };
 
@@ -85,5 +86,10 @@ void update_sched_data_rr();
 /* quantum */
 int get_quantum (struct task_struct * t);
 void set_quantum(struct task_struct * t, int new_quantum);
+
+void act_ticks_user2kernel();
+void act_ticks_kernel2user();
+void act_ticks_kernel2ready();
+void act_ticks_ready2kernel();
 
 #endif  /* __SCHED_H__ */
