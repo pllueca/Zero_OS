@@ -136,6 +136,10 @@ int fork()
 	"movl %%eax, %0;"
 	:"=g"(pid_child) 
 			  );
+	if(pid_child < 0){
+		errno = EAGAIN;
+	
+	}
     return pid_child;
 }
 

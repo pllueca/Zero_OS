@@ -136,6 +136,7 @@ struct task_struct* current()
 */
 void task_switch(union task_union*t)
 {
+	act_ticks_kernel2ready();
     __asm__ __volatile__(
         "pushl %esi;"
         "pushl %edi;"
@@ -150,6 +151,7 @@ void task_switch(union task_union*t)
         "popl %esi;"
 		
                           );
+	act_ticks_ready2kernel();
 }
 
 void inner_task_switch(union task_union* new)
@@ -331,8 +333,9 @@ int getStatPID(int pid, struct stats *st)
 	struct list_head *l;
     struct stats current_s;	
 	int i;
-	list_for_each(l, &readyqueue){
-		act = lh2ts(l);
+	//list_for_each(l, &readyqueue){
+	for(i = 0; i < 	NR_TASKS; ++i) {
+		act =(struct task_struct*) &task[i];
 		if(act->PID == pid)
 		{
 			st = &(act->statics);

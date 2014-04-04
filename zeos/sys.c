@@ -18,6 +18,7 @@
 #define LECTURA 0
 #define ESCRIPTURA 1
 #define MAX_WRITE 128
+#define NULL 0
 
 int PID_MAX = 1;
 
@@ -134,7 +135,7 @@ int sys_fork()
     if(list_empty(&freequeue) != 0)
     {
 		act_ticks_kernel2user();
-        return -ENFPCB;
+        return -EAGAIN;
     }
     /* (1) */
     l = list_first(&freequeue);
@@ -152,7 +153,7 @@ int sys_fork()
     {
         free_PCB(child);
 			act_ticks_kernel2user();
-        return -EDNALL;
+        return -ENOMEM;
     }
 
     child_page = get_PT(child);
@@ -222,10 +223,11 @@ int sys_fork()
 
 void sys_exit()
 {  
-	act_ticks_user2kernel();
+
   struct task_struct *act;
   page_table_entry *act_pag;
   int i, frame_act;
+	act_ticks_user2kernel();
   act = current();
   act_pag = get_PT(act);
   for(i = 0; i < NUM_PAG_DATA; i++)
@@ -233,17 +235,38 @@ void sys_exit()
       frame_act = get_frame(act_pag, NUM_PAG_KERNEL+NUM_PAG_CODE + i);
       free_frame(frame_act);
     }
+  act_ticks_kernel2user();
+	act->PID = -1;
   update_current_state_rr(&freequeue);
   sched_next_rr();
-	act_ticks_kernel2user();
+	
   
 }
 
 int sys_get_stats(int pid, struct stats *st)
 {
 	int err;
+	act_ticks_user2kernel();
+	if(pid < 0) {
+		act_ticks_kernel2user();
+		return -EINVAL;
+	}
+	if(st == NULL) {
+		act_ticks_kernel2user();
+		return -EFAULT;
+	}
+	if(st < L_USER_START){
+		act_ticks_kernel2user();
+		return -EFAULT;
+	}
+	if(st > L_USER_START + ((NUM_PAG_DATA + NUM_PAG_CODE)*PAGE_SIZE)){
+		act_ticks_kernel2user();
+		return -EFAULT;
+	}
+
 	if(current()->PID == pid)
 	{
+		act_ticks_kernel2user();
 		st = &(current()->statics);
 		return 0;
 	}
@@ -251,8 +274,10 @@ int sys_get_stats(int pid, struct stats *st)
 	{
 		err = getStatPID(pid,st);
 		if(err == -1){
-			return err;
+			act_ticks_kernel2user();
+			return -ESRCH;
 		}
+		act_ticks_kernel2user();
 		return 0;
 	}
 }
