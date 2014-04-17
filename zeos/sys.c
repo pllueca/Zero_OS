@@ -37,43 +37,53 @@ int sys_ni_syscall()
 
 int sys_write(int fd,char * buffer, int size)
 {
-	act_ticks_user2kernel();
-    if(check_fd(fd, 1) >= 0)
+    int w, written;
+    act_ticks_user2kernel();
+
+    if(check_fd(fd, 1) < 0) // fd not valid
     {
-        if(buffer != NULL) {
-            if(size >= 0)
-            {  //tot ok
-                int written = 0;
-	  
-                while(size >= MAX_WRITE)
-                {
-                    char buff2[MAX_WRITE];
-                    if(copy_from_user(buffer + written, &buff2, MAX_WRITE) >= 0)
-                    {
-                        int w = sys_write_console(&buff2, MAX_WRITE);
-                        written += w;
-                        size -= w;
-                    }
-                }	  
-                char buff2[size];  //size menor q max_write
-                if(copy_from_user(buffer + written, &buff2, size) >= 0){
-                    int w = sys_write_console(&buff2, size);
-                    written += w;
-                    size -= w;
-                }
-                if(size == 0) {
-					return written;  //tot ok
-					act_ticks_kernel2user();
-				}
-            }
-			act_ticks_kernel2user();
-            return -EINVAL; //size< 0
-        }
-		act_ticks_kernel2user();
-        return -EFAULT; //not null
+        act_ticks_kernel2user();
+        return -EBADF; 
     }
-	act_ticks_kernel2user();
-    return -EBADF; // fd not valid
+
+    if(buffer == NULL) // buffer is null
+    {
+        act_ticks_kernel2user();
+        return -EFAULT; 
+    }
+
+    if(size < 0)  // size < 0
+    {
+        act_ticks_kernel2user();
+        return -EINVAL; 
+    }
+
+    //tot ok, comença a escriure 
+
+    written = 0;
+    
+    while(size >= MAX_WRITE)
+    {
+        char buff2[MAX_WRITE];
+        if(copy_from_user(buffer + written, &buff2, MAX_WRITE) >= 0)
+        {
+            w = sys_write_console(&buff2, MAX_WRITE);
+            written += w;
+            size -= w;
+        }
+    }	  
+    char buff2[size];  //size menor q max_write
+    if(copy_from_user(buffer + written, &buff2, size) >= 0)
+    {
+        w = sys_write_console(&buff2, size);
+        written += w;
+        size -= w;
+    }
+    if(size == 0) 
+    {
+        return written;  //tot ok
+        act_ticks_kernel2user();
+    }
 }
 
 
@@ -81,15 +91,15 @@ extern int zeos_ticks ;
 
 int sys_gettime()
 {
-	act_ticks_user2kernel();
-	act_ticks_kernel2user();
+    act_ticks_user2kernel();
+    act_ticks_kernel2user();
     return zeos_ticks;
 }
 
 int sys_getpid()
 {
-	act_ticks_user2kernel();
-	act_ticks_kernel2user();
+    act_ticks_user2kernel();
+    act_ticks_kernel2user();
     return current()->PID;
 }
 
@@ -99,7 +109,7 @@ int sys_getpid()
  */
 int ret_from_fork()
 {
-  return 0;
+    return 0;
 }
 
 /* el pcb que recibe como parametro vuelve a estar en la readyqueue */
@@ -131,10 +141,13 @@ int sys_fork()
     struct task_struct *child, *parent;
     union task_union *child_union;
     page_table_entry *child_page, *parent_page;
-	act_ticks_user2kernel();
+
+    //statics
+    act_ticks_user2kernel();
+
     if(list_empty(&freequeue) != 0)
     {
-		act_ticks_kernel2user();
+        act_ticks_kernel2user();
         return -EAGAIN;
     }
     /* (1) */
@@ -152,7 +165,7 @@ int sys_fork()
     if(allocDir_ret != 1)
     {
         free_PCB(child);
-			act_ticks_kernel2user();
+        act_ticks_kernel2user();
         return -ENOMEM;
     }
 
@@ -171,7 +184,7 @@ int sys_fork()
             while(i >= 0) 
                 free_frame(child_frames[i--]);
             free_PCB(child);
-			act_ticks_kernel2user();
+            act_ticks_kernel2user();
             return -ENOMEM;
         }
     }
@@ -217,68 +230,68 @@ int sys_fork()
        Test fork 
        task_switch(child_union);
     */
-	act_ticks_kernel2user();
+    act_ticks_kernel2user();
     return PID;
 }
 
 void sys_exit()
 {  
 
-  struct task_struct *act;
-  page_table_entry *act_pag;
-  int i, frame_act;
-	act_ticks_user2kernel();
-  act = current();
-  act_pag = get_PT(act);
-  for(i = 0; i < NUM_PAG_DATA; i++)
+    struct task_struct *act;
+    page_table_entry *act_pag;
+    int i, frame_act;
+    act_ticks_user2kernel();
+    act = current();
+    act_pag = get_PT(act);
+    for(i = 0; i < NUM_PAG_DATA; i++)
     {
-      frame_act = get_frame(act_pag, NUM_PAG_KERNEL+NUM_PAG_CODE + i);
-      free_frame(frame_act);
+        frame_act = get_frame(act_pag, NUM_PAG_KERNEL+NUM_PAG_CODE + i);
+        free_frame(frame_act);
     }
-  act_ticks_kernel2user();
-	act->PID = -1;
-  update_current_state_rr(&freequeue);
-  sched_next_rr();
+    act_ticks_kernel2user();
+    act->PID = -1;
+    update_current_state_rr(&freequeue);
+    sched_next_rr();
 	
   
 }
 
 int sys_get_stats(int pid, struct stats *st)
 {
-	int err;
-	act_ticks_user2kernel();
-	if(pid < 0) {
-		act_ticks_kernel2user();
-		return -EINVAL;
-	}
-	if(st == NULL) {
-		act_ticks_kernel2user();
-		return -EFAULT;
-	}
-	if(st < L_USER_START){
-		act_ticks_kernel2user();
-		return -EFAULT;
-	}
-	if(st > L_USER_START + ((NUM_PAG_DATA + NUM_PAG_CODE)*PAGE_SIZE)){
-		act_ticks_kernel2user();
-		return -EFAULT;
-	}
+    int err;
+    act_ticks_user2kernel();
+    if(pid < 0) {
+        act_ticks_kernel2user();
+        return -EINVAL;
+    }
+    if(st == NULL) {
+        act_ticks_kernel2user();
+        return -EFAULT;
+    }
+    if(st < L_USER_START){
+        act_ticks_kernel2user();
+        return -EFAULT;
+    }
+    if(st > L_USER_START + ((NUM_PAG_DATA + NUM_PAG_CODE)*PAGE_SIZE)){
+        act_ticks_kernel2user();
+        return -EFAULT;
+    }
 
-	if(current()->PID == pid)
-	{
-		act_ticks_kernel2user();
-		st = &(current()->statics);
-		return 0;
-	}
-	else
-	{
-		err = getStatPID(pid,st);
-		if(err == -1){
-			act_ticks_kernel2user();
-			return -ESRCH;
-		}
-		act_ticks_kernel2user();
-		return 0;
-	}
+    if(current()->PID == pid)
+    {
+        act_ticks_kernel2user();
+        st = &(current()->statics);
+        return 0;
+    }
+    else
+    {
+        err = getStatPID(pid,st);
+        if(err == -1){
+            act_ticks_kernel2user();
+            return -ESRCH;
+        }
+        act_ticks_kernel2user();
+        return 0;
+    }
 }
 
