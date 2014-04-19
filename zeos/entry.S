@@ -83,6 +83,7 @@ ENTRY(clock_handler)
 	iret			;
 
 ENTRY(system_call_handler)
+	
 	SAVE_ALL	;
 	/*
 		si el numero de syscall(%eax) es negatiu o

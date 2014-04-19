@@ -148,7 +148,7 @@ int sys_fork()
     if(list_empty(&freequeue) != 0)
     {
         act_ticks_kernel2user();
-        return -EAGAIN;
+        return -EAGAIN; // no queden pcbs lliures
     }
     /* (1) */
     l = list_first(&freequeue);
@@ -157,8 +157,6 @@ int sys_fork()
 	
     /* (2) */
     parent = current();
-    copy_data(parent,child, KERNEL_STACK_SIZE*4);
-
     parent_page = get_PT(parent);
     allocDir_ret = allocate_DIR(child);
 
@@ -188,6 +186,10 @@ int sys_fork()
             return -ENOMEM;
         }
     }
+
+    copy_data(parent,child, KERNEL_STACK_SIZE*4); /*  (2)  */
+
+
     for(i = NUM_PAG_KERNEL; i < NUM_PAG_DATA+NUM_PAG_KERNEL; i++)
     {              
         child_frame = child_frames[i - NUM_PAG_KERNEL];
@@ -220,16 +222,12 @@ int sys_fork()
     pos_act = ((unsigned int)pos_act - (unsigned int)parent) / 4; 
     child_union -> stack[pos_act] = (unsigned int) ret_from_fork; /* (5) */
     child_union -> stack[pos_act-1] = 0;
-    child->kernel_esp =(unsigned int) &(child_union -> stack[pos_act-1]);
+    child->kernel_esp = (unsigned int) &(child_union -> stack[pos_act-1]);
     
     /* inicialitzacions x el scheduling */
     set_ini_stats(child);
     list_add_tail(&child->list, &readyqueue);
 
-    /* 
-       Test fork 
-       task_switch(child_union);
-    */
     act_ticks_kernel2user();
     return PID;
 }
@@ -248,8 +246,9 @@ void sys_exit()
         frame_act = get_frame(act_pag, NUM_PAG_KERNEL+NUM_PAG_CODE + i);
         free_frame(frame_act);
     }
-    act_ticks_kernel2user();
-    act->PID = -1;
+
+    act->PID = -1;  // PID = -1 -> Task morta
+
     update_current_state_rr(&freequeue);
     sched_next_rr();
 	
@@ -277,7 +276,7 @@ int sys_get_stats(int pid, struct stats *st)
         return -EFAULT;
     }
 
-    if(current()->PID == pid)
+    if(current()->PID == pid)  // si es el proces actual ens estalivem de buscar
     {
         act_ticks_kernel2user();
         st = &(current()->statics);
@@ -286,7 +285,8 @@ int sys_get_stats(int pid, struct stats *st)
     else
     {
         err = getStatPID(pid,st);
-        if(err == -1){
+        if(err == -1)
+        {
             act_ticks_kernel2user();
             return -ESRCH;
         }
