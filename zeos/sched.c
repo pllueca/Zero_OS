@@ -79,6 +79,7 @@ void init_idle (void)
         idle_stack = (union task_union*) idle_task;
         idle_stack->stack[KERNEL_STACK_SIZE - 1] = cpu_idle; 
         idle_stack->stack[KERNEL_STACK_SIZE - 2] = 0;   // dummy
+	
     }
 }
 
@@ -109,6 +110,7 @@ void init_task1(void)
         init_task->statics.blocked_ticks = 0;
         init_task->statics.elapsed_total_ticks = 0;
         init_task->statics.total_trans = 0;
+	init_task->t_state = ST_RUN;
     }
 	    
     
@@ -121,8 +123,10 @@ void init_sched()
     act_t = 0;
     INIT_LIST_HEAD(&freequeue);
     INIT_LIST_HEAD(&readyqueue);
-    for(i=0; i< NR_TASKS; i++) 
+    for(i=0; i< NR_TASKS; i++) {
         list_add(&task[i].task.list, &freequeue);
+	}
+//	init_sched_policy();
 }
 
 struct task_struct* current()
@@ -286,6 +290,7 @@ void act_ticks_user2kernel()
     current_ticks = get_ticks();
     current_s.user_ticks += current_ticks - (current_s.elapsed_total_ticks);
     current_s.elapsed_total_ticks = current_ticks;
+	act->statics = current_s;
   
 }
 
@@ -299,6 +304,7 @@ void act_ticks_kernel2user()
     current_ticks = get_ticks();
     current_s.system_ticks += current_ticks - (current_s.elapsed_total_ticks);
     current_s.elapsed_total_ticks = current_ticks;
+	act->statics = current_s;
   
 }
 
@@ -313,6 +319,7 @@ void act_ticks_kernel2ready()
     current_s.system_ticks += current_ticks - (current_s.elapsed_total_ticks);
     current_s.elapsed_total_ticks = current_ticks;
     act->t_state = ST_READY;
+	act->statics = current_s;
   
 }
 
@@ -328,6 +335,7 @@ void act_ticks_ready2kernel()
     current_s.elapsed_total_ticks = current_ticks;
     act->t_state = ST_RUN;
     ++current_s.total_trans;
+	act->statics = current_s;
   
 }
 
@@ -349,4 +357,17 @@ int getStatPID(int pid, struct stats *st)
     return -1;
 	
 }
+
+
+struct stats * get_task_stats(struct task_struct *t)
+{
+	// control d'errors ?
+	return &t->statics;
+}
+
+struct list_head * get_task_list(struct task_struct *t)
+{
+	return &t->list;
+}
+
 
