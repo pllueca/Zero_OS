@@ -290,7 +290,7 @@ void act_ticks_user2kernel()
     current_ticks = get_ticks();
     current_s.user_ticks += current_ticks - (current_s.elapsed_total_ticks);
     current_s.elapsed_total_ticks = current_ticks;
-	act->statics = current_s;
+    act->statics = current_s;
   
 }
 
@@ -304,7 +304,7 @@ void act_ticks_kernel2user()
     current_ticks = get_ticks();
     current_s.system_ticks += current_ticks - (current_s.elapsed_total_ticks);
     current_s.elapsed_total_ticks = current_ticks;
-	act->statics = current_s;
+    act->statics = current_s;
   
 }
 
@@ -319,7 +319,7 @@ void act_ticks_kernel2ready()
     current_s.system_ticks += current_ticks - (current_s.elapsed_total_ticks);
     current_s.elapsed_total_ticks = current_ticks;
     act->t_state = ST_READY;
-	act->statics = current_s;
+    act->statics = current_s;
   
 }
 
@@ -335,7 +335,7 @@ void act_ticks_ready2kernel()
     current_s.elapsed_total_ticks = current_ticks;
     act->t_state = ST_RUN;
     ++current_s.total_trans;
-	act->statics = current_s;
+    act->statics = current_s;
   
 }
 
