@@ -278,7 +278,7 @@ int sys_get_stats(int pid, struct stats *st)
     if(current()->PID == pid)  // si es el proces actual ens estalivem de buscar
     {
         act_ticks_kernel2user();
-        copy_to_user(&current()->statics, st, sizeof((struct stats)));
+        copy_to_user(&current()->statics, st, sizeof(struct stats));
         return 0;
     }
     else
