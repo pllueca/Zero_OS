@@ -108,7 +108,7 @@ void init_task1(void)
     init_task->statics.user_ticks = 0;
     init_task->statics.system_ticks = 0;
     init_task->statics.blocked_ticks = 0;
-    init_task->statics.elapsed_total_ticks = 0;
+    init_task->statics.elapsed_total_ticks = get_ticks();
     init_task->statics.total_trans = 0;
     init_task->t_state = ST_RUN;    
 }
@@ -281,11 +281,11 @@ void act_ticks_user2kernel()
     struct stats *current_s;
     int current_ticks;
     act =(struct task_struct *)current();
-    current_s = act->statics;
+    current_s = &act->statics;
     current_ticks = get_ticks();
     current_s->user_ticks += current_ticks - (current_s->elapsed_total_ticks);
     current_s->elapsed_total_ticks = current_ticks;
-    act->statics = current_s;
+    //    act->statics = current_s;
   
 }
 
@@ -295,11 +295,11 @@ void act_ticks_kernel2user()
     struct stats *current_s;
     int current_ticks;
     act =(struct task_struct *)current();
-    current_s = act->statics;
+    current_s = &act->statics;
     current_ticks = get_ticks();
     current_s->system_ticks += current_ticks - (current_s->elapsed_total_ticks);
     current_s->elapsed_total_ticks = current_ticks;
-    act->statics = current_s;
+    //    act->statics = current_s;
   
 }
 
@@ -314,7 +314,7 @@ void act_ticks_kernel2ready()
     current_s->system_ticks += current_ticks - (current_s->elapsed_total_ticks);
     current_s->elapsed_total_ticks = current_ticks;
     act->t_state = ST_READY;
-    act->statics = current_s;
+    //    act->statics = current_s;
   
 }
 
@@ -330,7 +330,7 @@ void act_ticks_ready2kernel()
     current_s->elapsed_total_ticks = current_ticks;
     act->t_state = ST_RUN;
     ++current_s->total_trans;
-    act->statics = current_s;
+    //    act->statics = current_s;
   
 }
 
@@ -345,7 +345,7 @@ int getStatPID(int pid, struct stats *st)
         act =(struct task_struct*) &task[i];
         if(act->PID == pid)
         {
-            st = &act->statics;
+            copy_to_user(&act->statics, st, sizeof((struct stats)));
             return 0;
         }
     }
