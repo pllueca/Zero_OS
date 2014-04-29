@@ -123,7 +123,7 @@ void init_sched()
     for(i=0; i< NR_TASKS; i++) {
         list_add(&task[i].task.list, &freequeue);
     }
-//	init_sched_policy();
+    init_sched_policy();
 }
 
 struct task_struct* current()
@@ -340,8 +340,7 @@ int getStatPID(int pid, struct stats *st)
     struct list_head *l;
     struct stats *current_s;	
     int i;
-    //list_for_each(l, &readyqueue){
-    for(i = 0; i < 	NR_TASKS; ++i) {
+    for(i = 0; i < NR_TASKS; ++i) {
         act =(struct task_struct*) &task[i];
         if(act->PID == pid)
         {
@@ -356,7 +355,6 @@ int getStatPID(int pid, struct stats *st)
 
 struct stats * get_task_stats(struct task_struct *t)
 {
-	// control d'errors ?
 	return &t->statics;
 }
 

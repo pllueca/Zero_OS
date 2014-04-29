@@ -116,13 +116,13 @@ int clock_routine()
 {
     ++zeos_ticks;
 
-    update_sched_data_rr(); //resta quantum
+    update_sched_data(); //resta quantum
 
-    if(needs_sched_rr() == 1 && zeos_ticks > 0)
+    if(needs_sched() == 1 && zeos_ticks > 0)
     {
       //cal posar lactual a la ready queue i canviar la task de la CPU
-      update_current_state_rr(&readyqueue);
-      sched_next_rr();
+      update_current_state(&readyqueue);
+      sched_next();
     }
     zeos_show_clock();
     return 0;
