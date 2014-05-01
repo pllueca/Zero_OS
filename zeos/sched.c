@@ -5,7 +5,7 @@
 #include <sched.h>
 #include <mm.h>
 #include <io.h>
-
+#include <errno.h>
 
 
 #define lh2ts list_head_to_task_struct
@@ -70,10 +70,7 @@ void init_idle (void)
     idle_task->kernel_esp = KERNEL_ESP((union task_union *) idle_task) - 8;
     e = allocate_DIR(idle_task);
     if(e != 1)
-    {
-        //restaurar &l a la free queue
-        // mai no hi haura pcbs lliures x al proces idle
-    }
+        return -EDNALL
     else
     {
         idle_stack = (union task_union*) idle_task;
@@ -94,11 +91,8 @@ void init_task1(void)
     init_task -> PID = 1;
     init_task -> kernel_esp = KERNEL_ESP((union task_union *)init_task);
     e = allocate_DIR(init_task);
-
-    if (e != 1) 
-    {
+    if (e != 1)  
         return -EDNALL;
-    }
     set_user_pages(init_task);
     task1_dir = get_DIR(init_task);
     setTSS_tswitch((int)&((union task_union *)init_task)->stack[KERNEL_STACK_SIZE]); //esp0 de la TSS
@@ -309,7 +303,7 @@ void act_ticks_kernel2ready()
     struct stats *current_s;
     int current_ticks;
     act =(struct task_struct *)current();
-    current_s = act->statics;
+    current_s = &act->statics;
     current_ticks = get_ticks();
     current_s->system_ticks += current_ticks - (current_s->elapsed_total_ticks);
     current_s->elapsed_total_ticks = current_ticks;
@@ -324,7 +318,7 @@ void act_ticks_ready2kernel()
     struct stats *current_s;
     int current_ticks;
     act =(struct task_struct *)current();
-    current_s = act->statics;
+    current_s = &act->statics;
     current_ticks = get_ticks();
     current_s->ready_ticks += current_ticks - (current_s->elapsed_total_ticks);
     current_s->elapsed_total_ticks = current_ticks;
@@ -344,7 +338,7 @@ int getStatPID(int pid, struct stats *st)
         act =(struct task_struct*) &task[i];
         if(act->PID == pid)
         {
-            copy_to_user(&act->statics, st, sizeof((struct stats)));
+            copy_to_user(&act->statics, st, sizeof(struct stats));
             return 0;
         }
     }
