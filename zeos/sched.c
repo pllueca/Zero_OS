@@ -9,6 +9,8 @@
 
 
 #define lh2ts list_head_to_task_struct
+#define RR 0
+#define FCFS 1
 
 union task_union task[NR_TASKS]
 __attribute__((__section__(".data.task")));
@@ -118,12 +120,12 @@ void init_sched()
         list_add(&task[i].task.list, &freequeue);
     }
     init_sched_policy();
+    set_sched_policy(RR);
 }
 
 struct task_struct* current()
 {
     int ret_value;
-  
     __asm__ __volatile__(
         "movl %%esp, %0"
         : "=g" (ret_value)
@@ -158,18 +160,15 @@ void inner_task_switch(union task_union* new)
     int ebp,esp_new;
     struct task_struct *new_task, *act_task;
     page_table_entry *new_task_page;
-  
     __asm__ __volatile__ 
             (
                 " movl %%ebp, %0;"
                 :"=g" (ebp)
              );
-  
     act_task = current(); 
-    act_task-> kernel_esp = ebp;
-
+    act_task -> kernel_esp = ebp;
     new_task = (struct task_struct*) new;
-    esp_new = new_task->kernel_esp;
+    esp_new = new_task -> kernel_esp;
     setTSS_tswitch((int)&(new->stack[KERNEL_STACK_SIZE])); //esp0 de la TSS
     new_task_page = get_DIR(new_task);
     set_cr3(new_task_page);
@@ -279,8 +278,6 @@ void act_ticks_user2kernel()
     current_ticks = get_ticks();
     current_s->user_ticks += current_ticks - (current_s->elapsed_total_ticks);
     current_s->elapsed_total_ticks = current_ticks;
-    //    act->statics = current_s;
-  
 }
 
 void act_ticks_kernel2user()
@@ -293,8 +290,6 @@ void act_ticks_kernel2user()
     current_ticks = get_ticks();
     current_s->system_ticks += current_ticks - (current_s->elapsed_total_ticks);
     current_s->elapsed_total_ticks = current_ticks;
-    //    act->statics = current_s;
-  
 }
 
 void act_ticks_kernel2ready()
@@ -308,8 +303,6 @@ void act_ticks_kernel2ready()
     current_s->system_ticks += current_ticks - (current_s->elapsed_total_ticks);
     current_s->elapsed_total_ticks = current_ticks;
     act->t_state = ST_READY;
-    //    act->statics = current_s;
-  
 }
 
 void act_ticks_ready2kernel()
@@ -324,8 +317,6 @@ void act_ticks_ready2kernel()
     current_s->elapsed_total_ticks = current_ticks;
     act->t_state = ST_RUN;
     ++current_s->total_trans;
-    //    act->statics = current_s;
-  
 }
 
 int getStatPID(int pid, struct stats *st)
@@ -334,7 +325,8 @@ int getStatPID(int pid, struct stats *st)
     struct list_head *l;
     struct stats *current_s;	
     int i;
-    for(i = 0; i < NR_TASKS; ++i) {
+    for(i = 0; i < NR_TASKS; ++i) 
+    {
         act =(struct task_struct*) &task[i];
         if(act->PID == pid)
         {
@@ -343,7 +335,6 @@ int getStatPID(int pid, struct stats *st)
         }
     }
     return -1;
-	
 }
 
 
