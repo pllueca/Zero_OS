@@ -3,6 +3,7 @@
  */
 
 #include <sched.h>
+#include <schedperf.h>
 #include <mm.h>
 #include <io.h>
 #include <errno.h>
@@ -72,7 +73,7 @@ void init_idle (void)
     idle_task->kernel_esp = KERNEL_ESP((union task_union *) idle_task) - 8;
     e = allocate_DIR(idle_task);
     if(e != 1)
-        return -EDNALL
+        return -EDNALL;
     else
     {
         idle_stack = (union task_union*) idle_task;
@@ -349,3 +350,30 @@ struct list_head * get_task_list(struct task_struct *t)
 }
 
 
+void block_process(struct list_head *block_queue)
+{
+    struct task_struct *act;
+    struct stats *st;
+    act = current();
+    st = get_task_stats(act);
+    update_current_state(block_queue);
+    st->system_ticks = get_ticks() - st->elapsed_total_ticks;
+    st->elapsed_total_ticks = get_ticks();
+    sched_next();
+}
+
+void unblock_process(struct task_struct *blocked)
+{
+    struct stats *st;
+    struct list_head *l;
+    st = get_task_stats(blocked);
+    l = get_task_list(blocked);
+    list_del(l);
+    list_add_tail(l, &readyqueue);
+    st->blocked_ticks += (get_ticks()-st->elapsed_total_ticks);
+    st->elapsed_total_ticks = get_ticks();
+    if (needs_sched()) {
+        update_current_state(&readyqueue);
+        sched_next();
+    }  
+}
