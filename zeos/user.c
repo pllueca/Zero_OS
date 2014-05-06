@@ -85,10 +85,51 @@ void exec_workload(int n)
     }
 }
 
+void print(struct stats *st)
+{
+    int n, t;
+    char b[32];
+    
+    n = st->user_ticks;
+    t += n;
+    itoa(n,b);
+    write(1,b,strlen(b));
+    write(1,"\n",1);
+
+    n = st->blocked_ticks;
+    t += n;
+    itoa(n,b);
+    write(1,b,strlen(b));
+    write(1,"\n",1);
+
+    n = st->ready_ticks;
+    t += n;
+    itoa(n,b);
+    write(1,b,strlen(b));
+    write(1,"\n",1);
+
+    n = st->system_ticks;
+    t += n;
+    itoa(n,b);
+    write(1,b,strlen(b));
+    write(1,"\n",1);
+
+    itoa(t,b);
+    write(1,b,strlen(b));
+    write(1,"\n",1);
+
+}
+
 /* escriu les estadistiques dels proces 1,2,3 i idle */
 void print_stats()
 {
-    
+    struct stats st;
+    int i,e;
+    for(i = 0; i < 4 ; ++i){
+        write(1"##############\n",15);
+        e = get_stats(i,&st);
+        print(&st);
+    }
 }
 
 int __attribute__ ((__section__(".text.main")))
@@ -96,6 +137,6 @@ main(void)
 { 
     set_sched_policy(0);
     exec_workload(2);
-    //    print_stats();
+    print_stats();
     while(1);
 }

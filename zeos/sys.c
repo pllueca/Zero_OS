@@ -104,6 +104,7 @@ int sys_getpid()
  */
 int ret_from_fork()
 {
+    act_ticks_kernel2user();
     return 0;
 }
 
@@ -217,11 +218,6 @@ int sys_fork()
     /* inicialitzacions x el scheduling */
     set_ini_stats(child);
     list_add_tail(&child->list, &readyqueue);
-
-    /* 
-       Test fork 
-       task_switch(child_union);
-    */
     act_ticks_kernel2user();
     return PID;
 }
@@ -281,7 +277,3 @@ int sys_get_stats(int pid, struct stats *st)
     }
 }
 
-int sys_read(int fd, char *buf, int nbytes)
-{
-    sys_read_console(buf, nbytes);
-}

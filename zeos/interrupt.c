@@ -114,6 +114,7 @@ extern int zeos_ticks;
 
 int clock_routine()
 {
+    act_ticks_user2kernel();
     ++zeos_ticks;
 
     update_sched_data(); //resta quantum
@@ -127,5 +128,6 @@ int clock_routine()
     }
     zeos_update_read_console_emul();
     zeos_show_clock();
+    act_ticks_kernel2user();
     return 0;
 }
