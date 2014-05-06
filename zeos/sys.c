@@ -81,8 +81,8 @@ int sys_write(int fd,char * buffer, int size)
     }
     if(size == 0) 
     {
-        return written;  //tot ok
         act_ticks_kernel2user();
+        return written;  //tot ok
     }
 }
 
@@ -141,10 +141,10 @@ int sys_fork()
     struct task_struct *child, *parent;
     union task_union *child_union;
     page_table_entry *child_page, *parent_page;
-	act_ticks_user2kernel();
+    act_ticks_user2kernel();
     if(list_empty(&freequeue) != 0)
     {
-		act_ticks_kernel2user();
+        act_ticks_kernel2user();
         return -EAGAIN;
     }
     /* (1) */
@@ -162,7 +162,7 @@ int sys_fork()
     if(allocDir_ret != 1)
     {
         free_PCB(child);
-			act_ticks_kernel2user();
+        act_ticks_kernel2user();
         return -ENOMEM;
     }
 
@@ -181,7 +181,7 @@ int sys_fork()
             while(i >= 0) 
                 free_frame(child_frames[i--]);
             free_PCB(child);
-			act_ticks_kernel2user();
+            act_ticks_kernel2user();
             return -ENOMEM;
         }
     }
@@ -227,13 +227,12 @@ int sys_fork()
        Test fork 
        task_switch(child_union);
     */
-	act_ticks_kernel2user();
+    act_ticks_kernel2user();
     return PID;
 }
 
 void sys_exit()
 {  
-
     struct task_struct *act;
     page_table_entry *act_pag;
     int i, frame_act;
@@ -245,32 +244,24 @@ void sys_exit()
         frame_act = get_frame(act_pag, NUM_PAG_KERNEL+NUM_PAG_CODE + i);
         free_frame(frame_act);
     }
-
     act->PID = -1;  // PID = -1 -> Task morta
-
-    update_current_state_rr(&freequeue);
-    sched_next_rr();
-	
-  
+    update_current_state(&freequeue);
+    sched_next();
 }
 
 int sys_get_stats(int pid, struct stats *st)
 {
     int err;
     act_ticks_user2kernel();
-    if(pid < 0) {
+    if(pid < 0) 
+    {
         act_ticks_kernel2user();
         return -EINVAL;
     }
-    if(st == NULL) {
-        act_ticks_kernel2user();
-        return -EFAULT;
-    }
-    if(st < L_USER_START){
-        act_ticks_kernel2user();
-        return -EFAULT;
-    }
-    if(st > L_USER_START + ((NUM_PAG_DATA + NUM_PAG_CODE)*PAGE_SIZE)){
+
+    if(st == NULL || st < L_USER_START ||
+       st > L_USER_START + ((NUM_PAG_DATA + NUM_PAG_CODE)*PAGE_SIZE) ) 
+    {
         act_ticks_kernel2user();
         return -EFAULT;
     }
@@ -281,6 +272,7 @@ int sys_get_stats(int pid, struct stats *st)
         copy_to_user(&current()->statics, st, sizeof(struct stats));
         return 0;
     }
+
     else
     {
         err = getStatPID(pid,st);
