@@ -121,7 +121,6 @@ void init_sched()
         list_add(&task[i].task.list, &freequeue);
     }
     init_sched_policy();
-    set_sched_policy(RR);
 }
 
 struct task_struct* current()

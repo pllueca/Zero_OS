@@ -6,7 +6,7 @@
 #include <segment.h>
 #include <hardware.h>
 #include <io.h>
-
+#include <schedperf.h>
 #include <zeos_interrupt.h>
 
 Gate idt[IDT_ENTRIES];
