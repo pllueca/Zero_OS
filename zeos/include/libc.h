@@ -10,6 +10,8 @@
 
 int write(int fd, char *buffer, int size);
 
+int read(int fd, char *buffer, int nticks);
+
 void itoa(int a, char *b);
 
 int strlen(char *a);

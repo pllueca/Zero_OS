@@ -280,3 +280,8 @@ int sys_get_stats(int pid, struct stats *st)
         return 0;
     }
 }
+
+int sys_read(int fd, char *buf, int nbytes)
+{
+    sys_read_console(buf, nbytes);
+}
