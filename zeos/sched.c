@@ -269,6 +269,7 @@ void set_quantum(struct task_struct * t, int new_quantum)
     t->quantum = new_quantum;
 }
 
+/* actualitza les estadistiques pasant de mode usuari a sistema  */
 void act_ticks_user2kernel()
 {
     struct task_struct *act;
@@ -281,6 +282,7 @@ void act_ticks_user2kernel()
     current_s->elapsed_total_ticks = current_ticks;
 }
 
+/* actualitza les estadistiques pasant de mode sistema a usuari */
 void act_ticks_kernel2user()
 {
     struct task_struct *act;
@@ -293,6 +295,10 @@ void act_ticks_kernel2user()
     current_s->elapsed_total_ticks = current_ticks;
 }
 
+/* 
+ * actualitza les estadistiques pasant de mode sistema a la cua de ready,
+ * quan el proces es expulsat de la CPU
+ */
 void act_ticks_kernel2ready()
 {
     struct task_struct *act;
@@ -306,6 +312,7 @@ void act_ticks_kernel2ready()
     act->t_state = ST_READY;
 }
 
+/* actualitza les estadistiques pasant de la cua de ready a executarse a la CPU */
 void act_ticks_ready2kernel()
 {
     struct task_struct *act;
@@ -341,12 +348,12 @@ int getStatPID(int pid, struct stats *st)
 
 struct stats * get_task_stats(struct task_struct *t)
 {
-	return &t->statics;
+    return &t->statics;
 }
 
 struct list_head * get_task_list(struct task_struct *t)
 {
-	return &t->list;
+    return &t->list;
 }
 
 
@@ -359,6 +366,7 @@ void block_process(struct list_head *block_queue)
     update_current_state(block_queue);
     st->system_ticks = get_ticks() - st->elapsed_total_ticks;
     st->elapsed_total_ticks = get_ticks();
+    //    act->t_state = ST_BLOCKED; ?
     sched_next();
 }
 
