@@ -365,7 +365,7 @@ void block_process(struct list_head *block_queue)
     update_current_state(block_queue);
     st->system_ticks = get_ticks() - st->elapsed_total_ticks;
     st->elapsed_total_ticks = get_ticks();
-    //    act->t_state = ST_BLOCKED; ?
+    act->t_state = ST_BLOCKED;
     sched_next();
 }
 
@@ -379,7 +379,8 @@ void unblock_process(struct task_struct *blocked)
     list_add_tail(l, &readyqueue);
     st->blocked_ticks += (get_ticks()-st->elapsed_total_ticks);
     st->elapsed_total_ticks = get_ticks();
-    if (needs_sched()) {
+    if (needs_sched()) 
+    {
         update_current_state(&readyqueue);
         sched_next();
     }  

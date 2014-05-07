@@ -4,7 +4,15 @@
 int pid, c_pid;
 char buffer[64];
 
+void print_int(int a) {
+  char buff[32];
+  itoa(a,buff);
+  write(1,buff,strlen(buff));
+  write(1,"\n",1);
+}
 
+
+/* calcula el n-essim terme de la seq. de fibonacci */
 int fib(int n)
 {
     if (n == 0) return 0;
@@ -32,6 +40,7 @@ void workload1(){
 
 void workload2(){
     int pid,pid_f,f,r,i;
+    char buff[32];
     pid = fork();
     if(pid == 0){
         pid_f = fork();
@@ -39,30 +48,36 @@ void workload2(){
             // fill 1
             for(i = 0; i < 10; ++i)
                 r = read(0,&buff, 10);
-            write(1,"1\n",2);
+            r = fib(5);
+            print_int(5);
         }
         else{
             // fill 2
             for(i = 0; i < 5; ++i)
                 r = read(0,&buff, 20);
-            write(1,"2\n",2);
+            r = fib(5);
+            print_int(5);
         }
     }
     else{
-        // pare
         for(i = 0; i < 20; ++i)
-            r = read(0,&buff, 5);
-        write(1,"p\n",2);
+            r  = read(0,&buff,5);
+        r = fib(5);
+        print_int(5);
     }
 }
 
 void workload3(){
+    char buff[32];
     int pid,pid_f,f;
     pid = fork();
     if(pid == 0){
         pid_f = fork();
         if(pid_f == 0){
-            // fill 1
+            // llegeix, calcula i escriu
+            f = read(0, &buff,50);
+            f = fib(20);
+            print_int(20);
         }
         else{
             // fill 2
@@ -76,13 +91,11 @@ void workload3(){
 void exec_workload(int n)
 {
     if(n == 1)
-    {
         workload1();
-    }
-    else if (n == 1)
-    {
+    else if (n == 2)
         workload2();
-    }
+    else if(n == 3)
+        workload3();
 }
 
 void print(struct stats *st)
