@@ -57,7 +57,7 @@ void cpu_idle(void)
     __asm__ __volatile__("sti": : :"memory");
     while(1)
     {
-      //printk("xx");
+//      printk("xx\n");
     }
 }
 
@@ -77,7 +77,10 @@ void init_idle (void)
     idle_stack = (union task_union*) idle_task;
     idle_stack->stack[KERNEL_STACK_SIZE - 1] = cpu_idle; 
     idle_stack->stack[KERNEL_STACK_SIZE - 2] = 0;   // dummy
-	set_ini_stats(idle_task);
+	idle_task->statics.system_ticks = 3;
+	idle_task->statics.ready_ticks =5;
+	idle_task->statics.elapsed_total_ticks = 10;
+//		set_ini_stats(idle_task);
 	
     
 }
@@ -140,6 +143,11 @@ struct task_struct* current()
 void task_switch(union task_union*t)
 {
     act_ticks_kernel2ready();
+	if(((struct task_struct *)t) -> PID == 0){
+		printk("adasdas\n");
+		act_stats_entra_idle();
+
+}
     __asm__ __volatile__(
         "pushl %esi;"
         "pushl %edi;"
@@ -219,6 +227,7 @@ void sched_next_rr()
   
     if(list_empty(&readyqueue))
     {
+	// pasem a idle 
         task_switch(idle_task);
     }
     else
@@ -280,7 +289,7 @@ void act_ticks_user2kernel()
     current_s = &act->statics;
     current_ticks = get_ticks();
     current_s->user_ticks += current_ticks - (current_s->elapsed_total_ticks);
-    current_s->elapsed_total_ticks = current_ticks;
+    current_s->elapsed_total_ticks = get_ticks();
 }
 
 /* actualitza les estadistiques pasant de mode sistema a usuari */
@@ -293,7 +302,7 @@ void act_ticks_kernel2user()
     current_s = &act->statics;
     current_ticks = get_ticks();
     current_s->system_ticks += current_ticks - (current_s->elapsed_total_ticks);
-    current_s->elapsed_total_ticks = current_ticks;
+    current_s->elapsed_total_ticks = get_ticks();
 }
 
 /* 
@@ -309,7 +318,7 @@ void act_ticks_kernel2ready()
     current_s = &act->statics;
     current_ticks = get_ticks();
     current_s->system_ticks += current_ticks - (current_s->elapsed_total_ticks);
-    current_s->elapsed_total_ticks = current_ticks;
+    current_s->elapsed_total_ticks = get_ticks();
     act->t_state = ST_READY;
 }
 
@@ -323,10 +332,35 @@ void act_ticks_ready2kernel()
     current_s = &act->statics;
     current_ticks = get_ticks();
     current_s->ready_ticks += current_ticks - (current_s->elapsed_total_ticks);
-    current_s->elapsed_total_ticks = current_ticks;
+    current_s->elapsed_total_ticks = get_ticks();
     act->t_state = ST_RUN;
     ++current_s->total_trans;
 }
+
+void act_stats_entra_idle() 
+{
+    struct task_struct *act;
+    struct stats *current_s;
+    int current_ticks;
+    act = (struct task_struct *) idle_task;
+    current_s = &act->statics;
+    current_ticks = get_ticks();
+    current_s->ready_ticks += current_ticks - (current_s->elapsed_total_ticks);
+    current_s->elapsed_total_ticks = get_ticks();	
+}
+
+void act_stats_surt_idle()
+{
+struct task_struct *act;
+    struct stats *current_s;
+    int current_ticks;
+    act =(struct task_struct *)idle_task;
+    current_s = &act->statics;
+    current_ticks = get_ticks();
+    current_s->system_ticks += current_ticks - (current_s->elapsed_total_ticks);
+    current_s->elapsed_total_ticks = get_ticks();
+}
+
 
 int getStatPID(int pid, struct stats *st)
 {

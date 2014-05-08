@@ -281,9 +281,9 @@ int sys_get_stats(int pid, struct stats *st)
         return 0;
     }
 }
-/*
-int sys_read(int fd, char *buf, int nbytes) {
+
+int sys_read_cutre(int fd, char *buf, int nbytes) {
   act_ticks_user2kernel();
-  sys_read_console(buf, nbytes);
+  sys_read(fd, buf, nbytes);
   act_ticks_kernel2user();
-}*/
+}

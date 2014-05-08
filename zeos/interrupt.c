@@ -125,6 +125,9 @@ int clock_routine()
       //cal posar lactual a la ready queue i canviar la task de la CPU
       if(current()->PID != 0)
         update_current_state(&readyqueue);
+      else
+	act_stats_surt_idle();
+
       sched_next();
     }
 

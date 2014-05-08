@@ -59,22 +59,24 @@ void workload2(){
         pid_f = fork();
         if(pid_f == 0){
             // PID 3
-             r = read(0,&buff, 400);
-	    foo(30000000);
+             r = read(0,&buff, 3000);
+//	    foo(30000000);
             print_act();
-		//exit();
+		exit();
         }
         else{
             // PID 2
 
-                r = read(0,&buff, 600);
-	    foo(20000000);
-	print_act(); //exit();
+//	    foo(20000000);
+                r = read(0,&buff, 3000);
+//	    foo(200000);
+	print_act(); exit();
         }
     }
     else{
-        r  = read(0,&buff,300);
-	foo(300000000);
+	r  = read(0,&buff,1);
+        r  = read(0,&buff,3000);
+//	foo(30000);
 	print_act();
 //	exit();
     }
@@ -155,7 +157,7 @@ void print_stats()
 void print_act()
 {
 	int pid,e;
-	struct stats st;
+	struct stats st,st2;
 	pid = getpid();
 	write(1,"\nPID: ",5);
 	print_int(pid);
@@ -167,16 +169,16 @@ void print_act()
 	print(&st);
 	if(pid == 1){
 		
-		e = get_stats(0,&st);
+		e = get_stats(0,&st2);
 		write(1,"IDLE:\n",6);
-		print(&st);
+		print(&st2);
 	}
 }
 
 int __attribute__ ((__section__(".text.main")))
 main(void)
 { 
-    set_sched_policy(0);
+    set_sched_policy(1);
     exec_workload(2);
     
     while(1);
