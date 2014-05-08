@@ -20,6 +20,11 @@ int fib(int n)
     return fib(n-1) + fib(n-2);
 }
 
+void foo(){
+    int i;
+    (for i = 0 ; i < 1000; ++i){}
+}
+
 /* intensiu en calcul, no es bloqueixa */
 void workload1(){
     int pid,pid_f,f;

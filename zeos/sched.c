@@ -74,13 +74,10 @@ void init_idle (void)
     e = allocate_DIR(idle_task);
     if(e != 1)
         return -EDNALL;
-    else
-    {
-        idle_stack = (union task_union*) idle_task;
-        idle_stack->stack[KERNEL_STACK_SIZE - 1] = cpu_idle; 
-        idle_stack->stack[KERNEL_STACK_SIZE - 2] = 0;   // dummy
-	
-    }
+    idle_stack = (union task_union*) idle_task;
+    idle_stack->stack[KERNEL_STACK_SIZE - 1] = cpu_idle; 
+    idle_stack->stack[KERNEL_STACK_SIZE - 2] = 0;   // dummy
+    set_ini_stats(idle_task);
 }
 
 void init_task1(void)
@@ -198,7 +195,6 @@ void switchInit()
 /* inicializa las estadisticas de una task */
 void set_ini_stats(struct task_struct *t)
 {
-  
     t->statics.user_ticks = 0;
     t->statics.system_ticks = 0;
     t->statics.blocked_ticks = 0;
@@ -206,7 +202,6 @@ void set_ini_stats(struct task_struct *t)
     t->statics.total_trans = 0;
     t->t_state = ST_READY;
     t->statics.remaining_ticks = INITIAL_QUANTUM;
-  
 }
 
 /*
@@ -218,9 +213,7 @@ void sched_next_rr()
     struct list_head *l_next;
   
     if(list_empty(&readyqueue))
-    {
         task_switch(idle_task);
-    }
     else
     {
         l_next = list_first(&readyqueue);
@@ -247,9 +240,7 @@ void update_current_state_rr(struct list_head *dest)
 int needs_sched_rr()
 {
     if(CPU_QUANTUM <= 0)
-    {
         return 1;
-    }
     return 0;
 }
 

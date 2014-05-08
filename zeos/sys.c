@@ -266,13 +266,10 @@ int sys_get_stats(int pid, struct stats *st)
 
     else
     {
+        act_ticks_kernel2user();
         err = getStatPID(pid,st);
         if(err == -1)
-        {
-            act_ticks_kernel2user();
             return -ESRCH;
-        }
-        act_ticks_kernel2user();
         return 0;
     }
 }
