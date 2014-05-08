@@ -219,10 +219,6 @@ int sys_fork()
     set_ini_stats(child);
     list_add_tail(&child->list, &readyqueue);
 
-    /* 
-       Test fork 
-       task_switch(child_union);
-    */
     act_ticks_kernel2user();
     return PID;
 }
@@ -240,7 +236,7 @@ void sys_exit()
         frame_act = get_frame(act_pag, NUM_PAG_KERNEL+NUM_PAG_CODE + i);
         free_frame(frame_act);
     }
-    act->PID = -1;  // PID = -1 -> Task morta
+    act->PID = -1;  // PID = -1 -> Task morta o no inicialitzada
     update_current_state(&freequeue);
     sched_next();
 }
@@ -282,8 +278,10 @@ int sys_get_stats(int pid, struct stats *st)
     }
 }
 
+
+/** actualitza les estadistiques del proces que entra a sistema per llegir */
 int sys_read_cutre(int fd, char *buf, int nbytes) {
-  act_ticks_user2kernel();
-  sys_read(fd, buf, nbytes);
-  act_ticks_kernel2user();
+    act_ticks_user2kernel();
+    sys_read(fd, buf, nbytes);
+    act_ticks_kernel2user();
 }

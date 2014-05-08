@@ -57,7 +57,7 @@ void cpu_idle(void)
     __asm__ __volatile__("sti": : :"memory");
     while(1)
     {
-//      printk("xx\n");
+	;
     }
 }
 
@@ -77,10 +77,8 @@ void init_idle (void)
     idle_stack = (union task_union*) idle_task;
     idle_stack->stack[KERNEL_STACK_SIZE - 1] = cpu_idle; 
     idle_stack->stack[KERNEL_STACK_SIZE - 2] = 0;   // dummy
-	idle_task->statics.system_ticks = 3;
-	idle_task->statics.ready_ticks =5;
-	idle_task->statics.elapsed_total_ticks = 10;
-//		set_ini_stats(idle_task);
+
+    set_ini_stats(idle_task);
 	
     
 }
@@ -120,10 +118,11 @@ void init_sched()
     INIT_LIST_HEAD(&freequeue);
     INIT_LIST_HEAD(&readyqueue);
     for(i=0; i< NR_TASKS; i++) {
+	task[i].task.PID = -1;
         list_add(&task[i].task.list, &freequeue);
     }
     init_sched_policy();
-    //sys_set_sched_policy(RR);
+
 }
 
 struct task_struct* current()
@@ -143,11 +142,8 @@ struct task_struct* current()
 void task_switch(union task_union*t)
 {
     act_ticks_kernel2ready();
-	if(((struct task_struct *)t) -> PID == 0){
-		printk("adasdas\n");
-		act_stats_entra_idle();
 
-}
+
     __asm__ __volatile__(
         "pushl %esi;"
         "pushl %edi;"
@@ -351,7 +347,7 @@ void act_stats_entra_idle()
 
 void act_stats_surt_idle()
 {
-struct task_struct *act;
+    struct task_struct *act;
     struct stats *current_s;
     int current_ticks;
     act =(struct task_struct *)idle_task;
@@ -417,7 +413,7 @@ void unblock_process(struct task_struct *blocked)
     list_add_tail(l, &readyqueue);
     st->blocked_ticks += (get_ticks() - st->elapsed_total_ticks);
     st->elapsed_total_ticks = get_ticks();
-	blocked->t_state = ST_READY;
+    blocked->t_state = ST_READY;
     if (needs_sched()) {
         update_current_state(&readyqueue);
         sched_next();

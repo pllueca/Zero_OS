@@ -5,10 +5,10 @@ int pid, c_pid;
 char buffer[64];
 
 void print_int(int a) {
-  char buff[64];
-  itoa(a,buff);
-  write(1,buff,strlen(buff));
-  write(1,"\n",1);
+    char buff[64];
+    itoa(a,buff);
+    write(1,buff,strlen(buff));
+    write(1,"\n",1);
 }
 
 
@@ -22,10 +22,10 @@ int fib(int n)
 
 void foo(int n){
     int i,a;
-	a = 23;
+    a = 23;
     for (i = 0 ; i < n; ++i){
 	a = a + 1 - 4*i;
-	}
+    }
 }
 
 /* intensiu en calcul, no es bloqueixa */
@@ -36,16 +36,16 @@ void workload1(){
         pid_f = fork();
         if(pid_f == 0){
 	    foo(20000000);
-		print_act(); exit();
+            print_act(); exit();
         }
         else{
 	    foo(20000000);
-	print_act(); exit();
+            print_act(); exit();
         }
     }
     else{
 	read(0,&buffer,2);
-	    foo(20000000);
+        foo(20000000);
 
 	print_act();
     }
@@ -58,27 +58,26 @@ void workload2(){
     if(pid == 0){
         pid_f = fork();
         if(pid_f == 0){
-            // PID 3
-             r = read(0,&buff, 3000);
-//	    foo(30000000);
+            r = read(0,&buff, 1500);
+            foo(300000);
+            r = read(0,&buff, 1500);
             print_act();
-		exit();
+            exit();
         }
         else{
-            // PID 2
-
-//	    foo(20000000);
-                r = read(0,&buff, 3000);
-//	    foo(200000);
-	print_act(); exit();
+            r = read(0,&buff, 1500);
+            foo(300000);
+            r = read(0,&buff, 1500);
+            print_act(); 
+            exit();
         }
     }
     else{
-	r  = read(0,&buff,1);
-        r  = read(0,&buff,3000);
-//	foo(30000);
+        r = read(0,&buff,1);
+        r = read(0,&buff, 1500);
+        foo(300000);
+        r = read(0,&buff, 1500);
 	print_act();
-//	exit();
     }
 }
 
@@ -89,17 +88,25 @@ void workload3(){
     if(pid == 0){
         pid_f = fork();
         if(pid_f == 0){
-            // llegeix, calcula i escriu
             f = read(0, &buff,50);
-            f = fib(20);
-            print_int(20);
+            foo(600000);
+            print_act();
+            exit();
         }
         else{
-            // fill 2
+            foo(1000000);
+            r = read(0,&buff,200);
+            foo(2000000);
+            r = read(0,&buff,100);
+            print_act();
+            exit();
         }
     }
     else{
-        // pare
+        foo(100000000);
+        foo(100000000);
+        print_act();
+        exit();
     }
 }
 
@@ -119,26 +126,26 @@ void print(struct stats *st)
     char b[32];
     t = 0;
     n = st->user_ticks;
-	write(1,"user:\n",6);
-	print_int(n);
+    write(1,"user:\n",6);
+    print_int(n);
     t += n;
-	write(1,"blocked:\n",9);
-	n = st->blocked_ticks;
-	t += n;
-	print_int(n);
+    write(1,"blocked:\n",9);
+    n = st->blocked_ticks;
+    t += n;
+    print_int(n);
 
-	write(1,"ready:\n",7);
+    write(1,"ready:\n",7);
     n = st->ready_ticks;
     t += n;
-	print_int(n);
+    print_int(n);
 
-	write(1,"system:\n",8);
+    write(1,"system:\n",8);
     n = st->system_ticks;
     t += n;
-	print_int(n);
+    print_int(n);
 
-	write(1,"total:\n",7);
-	print_int(t);
+    write(1,"total:\n",7);
+    print_int(t);
 
 }
 
@@ -156,29 +163,29 @@ void print_stats()
 
 void print_act()
 {
-	int pid,e;
-	struct stats st,st2;
-	pid = getpid();
-	write(1,"\nPID: ",5);
-	print_int(pid);
-	e = get_stats(pid,&st);
-	if(e != 0){
-		write(1,"error\n",6);
-		return;
-	}
-	print(&st);
-	if(pid == 1){
+    int pid,e;
+    struct stats st,st2;
+    pid = getpid();
+    write(1,"\nPID: ",5);
+    print_int(pid);
+    e = get_stats(pid,&st);
+    if(e != 0){
+        write(1,"error\n",6);
+        return;
+    }
+    print(&st);
+    if(pid == 1){
 		
-		e = get_stats(0,&st2);
-		write(1,"IDLE:\n",6);
-		print(&st2);
-	}
+        e = get_stats(0,&st2);
+        write(1,"IDLE:\n",6);
+        print(&st2);
+    }
 }
 
 int __attribute__ ((__section__(".text.main")))
 main(void)
 { 
-    set_sched_policy(1);
+    set_sched_policy(0);
     exec_workload(2);
     
     while(1);
