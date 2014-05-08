@@ -218,6 +218,11 @@ int sys_fork()
     /* inicialitzacions x el scheduling */
     set_ini_stats(child);
     list_add_tail(&child->list, &readyqueue);
+
+    /* 
+       Test fork 
+       task_switch(child_union);
+    */
     act_ticks_kernel2user();
     return PID;
 }
@@ -266,11 +271,19 @@ int sys_get_stats(int pid, struct stats *st)
 
     else
     {
-        act_ticks_kernel2user();
         err = getStatPID(pid,st);
         if(err == -1)
+        {
+            act_ticks_kernel2user();
             return -ESRCH;
+        }
+        act_ticks_kernel2user();
         return 0;
     }
 }
-
+/*
+int sys_read(int fd, char *buf, int nbytes) {
+  act_ticks_user2kernel();
+  sys_read_console(buf, nbytes);
+  act_ticks_kernel2user();
+}*/

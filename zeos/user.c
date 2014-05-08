@@ -5,7 +5,7 @@ int pid, c_pid;
 char buffer[64];
 
 void print_int(int a) {
-  char buff[32];
+  char buff[64];
   itoa(a,buff);
   write(1,buff,strlen(buff));
   write(1,"\n",1);
@@ -20,9 +20,12 @@ int fib(int n)
     return fib(n-1) + fib(n-2);
 }
 
-void foo(){
-    int i;
-    (for i = 0 ; i < 1000; ++i){}
+void foo(int n){
+    int i,a;
+	a = 23;
+    for (i = 0 ; i < n; ++i){
+	a = a + 1 - 4*i;
+	}
 }
 
 /* intensiu en calcul, no es bloqueixa */
@@ -32,14 +35,19 @@ void workload1(){
     if(pid == 0){
         pid_f = fork();
         if(pid_f == 0){
-            f = fib(500);
+	    foo(20000000);
+		print_act(); exit();
         }
         else{
-            f = fib(750);
+	    foo(20000000);
+	print_act(); exit();
         }
     }
     else{
-        f = fib(1000);
+	read(0,&buffer,2);
+	    foo(20000000);
+
+	print_act();
     }
 }
 
@@ -50,25 +58,25 @@ void workload2(){
     if(pid == 0){
         pid_f = fork();
         if(pid_f == 0){
-            // fill 1
-            for(i = 0; i < 10; ++i)
-                r = read(0,&buff, 10);
-            r = fib(5);
-            print_int(5);
+            // PID 3
+             r = read(0,&buff, 400);
+	    foo(30000000);
+            print_act();
+		//exit();
         }
         else{
-            // fill 2
-            for(i = 0; i < 5; ++i)
-                r = read(0,&buff, 20);
-            r = fib(5);
-            print_int(5);
+            // PID 2
+
+                r = read(0,&buff, 600);
+	    foo(20000000);
+	print_act(); //exit();
         }
     }
     else{
-        for(i = 0; i < 20; ++i)
-            r  = read(0,&buff,5);
-        r = fib(5);
-        print_int(5);
+        r  = read(0,&buff,300);
+	foo(300000000);
+	print_act();
+//	exit();
     }
 }
 
@@ -107,34 +115,28 @@ void print(struct stats *st)
 {
     int n, t;
     char b[32];
-    
+    t = 0;
     n = st->user_ticks;
+	write(1,"user:\n",6);
+	print_int(n);
     t += n;
-    itoa(n,b);
-    write(1,b,strlen(b));
-    write(1,"\n",1);
+	write(1,"blocked:\n",9);
+	n = st->blocked_ticks;
+	t += n;
+	print_int(n);
 
-    n = st->blocked_ticks;
-    t += n;
-    itoa(n,b);
-    write(1,b,strlen(b));
-    write(1,"\n",1);
-
+	write(1,"ready:\n",7);
     n = st->ready_ticks;
     t += n;
-    itoa(n,b);
-    write(1,b,strlen(b));
-    write(1,"\n",1);
+	print_int(n);
 
+	write(1,"system:\n",8);
     n = st->system_ticks;
     t += n;
-    itoa(n,b);
-    write(1,b,strlen(b));
-    write(1,"\n",1);
+	print_int(n);
 
-    itoa(t,b);
-    write(1,b,strlen(b));
-    write(1,"\n",1);
+	write(1,"total:\n",7);
+	print_int(t);
 
 }
 
@@ -144,10 +146,31 @@ void print_stats()
     struct stats st;
     int i,e;
     for(i = 0; i < 4 ; ++i){
-        write(1"##############\n",15);
+        write(1,"##############\n",15);
         e = get_stats(i,&st);
         print(&st);
     }
+}
+
+void print_act()
+{
+	int pid,e;
+	struct stats st;
+	pid = getpid();
+	write(1,"\nPID: ",5);
+	print_int(pid);
+	e = get_stats(pid,&st);
+	if(e != 0){
+		write(1,"error\n",6);
+		return;
+	}
+	print(&st);
+	if(pid == 1){
+		
+		e = get_stats(0,&st);
+		write(1,"IDLE:\n",6);
+		print(&st);
+	}
 }
 
 int __attribute__ ((__section__(".text.main")))
@@ -155,6 +178,6 @@ main(void)
 { 
     set_sched_policy(0);
     exec_workload(2);
-    print_stats();
+    
     while(1);
 }

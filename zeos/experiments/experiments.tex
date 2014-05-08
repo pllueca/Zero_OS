@@ -8,6 +8,7 @@
 \title{Evaluacio de rendiment de politiques de planificacio}
 \author{Sergi Alonso, Pablo Llueca}
 
+
 \begin{document}
 
 \lstset{
@@ -29,36 +30,35 @@
 
 \section{Workload 1}
 \subsection{Descripcio del proces}
-El primer workload prova el rendiment de les diferents politiques de planificacio amb processos intensius en calcul, amb molt poca entrada/sortida. El proces pare crea un fill, que tambe crea un fill (3 procesos en total) i tots calculen el n-essim terme de la succecio de fibonacci.
+El primer workload prova el rendiment de les diferents politiques de planificacio amb processos intensius en calcul, amb molt poca entrada/sortida. El proces pare crea un fill, que tambe crea un fill (3 procesos en total) i tots executen un gran nombre (igual per a tots) d'iteracions d'un bucle que no fa res (funcio foo()).
+\begin{description}
+  \item [Round Robin] \hfill \\
+    Aquesta politica de planificacio reparteix equitativament els recursos entre els procesos, i donat que tots executen el mateix codi tots ocuparan la CPU un nombre molt semblant de ticks, i esperaran a la cua de ready un temps equivalent. El proces idle no entra en cap moment en execucio donat que mai estan tots els procesos bloquejats.
+  \item  [First Come First Served] \hfill \\
+    Amb aquesta politica de planificacio els procesos fills nomes abandonen la CPU quan acaben la seva execucio, i tot i que aixo no afecta al temps total si que fa variar el temps que un proces individual pasa a la cua de ready (el primer fill no esta parat en cap moment, pero el segon ha d'esperar que aquest acabi i el pare ha d'esperar que acabin els 2).
+  \end{description}
 
 \subsection{Codi}
 \begin{lstlisting}
-  int fib(int n)
-  {
-    if (n == 0) return 0;
-    if (n == 1) return 1;
-    return fib(n-1) + fib(n-2);
+
+  void foo(int n){
+    
   }
 
   void workload1(){
-    int pid,pid_f,f;
-    pid = fork();
-    if(pid == 0){
-      pid_f = fork();
-      if(pid_f == 0)
-      f = fib(500);
-      else
-      f = fib(750);
-    }
-    else{
-      f = fib(1000);
-    }
+   
   }
+
 \end{lstlisting}
 
 
 \section{Workload 2}
+\subsection{Descripcio del  proces}
+\begin{description}
+  \item [Round Robin] \hfill \\
+  \item  [First Come First Served] \hfill \\
 
+  \end{description}
 \subsection{Codi}
 \begin{lstlisting}
   void workload2(){

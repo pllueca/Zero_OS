@@ -57,7 +57,7 @@ void cpu_idle(void)
     __asm__ __volatile__("sti": : :"memory");
     while(1)
     {
-
+      //printk("xx");
     }
 }
 
@@ -77,7 +77,9 @@ void init_idle (void)
     idle_stack = (union task_union*) idle_task;
     idle_stack->stack[KERNEL_STACK_SIZE - 1] = cpu_idle; 
     idle_stack->stack[KERNEL_STACK_SIZE - 2] = 0;   // dummy
-    set_ini_stats(idle_task);
+	set_ini_stats(idle_task);
+	
+    
 }
 
 void init_task1(void)
@@ -118,6 +120,7 @@ void init_sched()
         list_add(&task[i].task.list, &freequeue);
     }
     init_sched_policy();
+    //sys_set_sched_policy(RR);
 }
 
 struct task_struct* current()
@@ -195,6 +198,7 @@ void switchInit()
 /* inicializa las estadisticas de una task */
 void set_ini_stats(struct task_struct *t)
 {
+  
     t->statics.user_ticks = 0;
     t->statics.system_ticks = 0;
     t->statics.blocked_ticks = 0;
@@ -202,6 +206,7 @@ void set_ini_stats(struct task_struct *t)
     t->statics.total_trans = 0;
     t->t_state = ST_READY;
     t->statics.remaining_ticks = INITIAL_QUANTUM;
+  
 }
 
 /*
@@ -213,14 +218,18 @@ void sched_next_rr()
     struct list_head *l_next;
   
     if(list_empty(&readyqueue))
+    {
         task_switch(idle_task);
+    }
     else
     {
         l_next = list_first(&readyqueue);
         list_del(l_next);
         next = lh2ts(l_next);
         CPU_QUANTUM = next->quantum;
-        task_switch((union task_union*)next);
+	
+        task_switch( (union task_union*)next);
+	
     }
 }
 
@@ -240,7 +249,9 @@ void update_current_state_rr(struct list_head *dest)
 int needs_sched_rr()
 {
     if(CPU_QUANTUM <= 0)
+    {
         return 1;
+    }
     return 0;
 }
 
@@ -351,12 +362,13 @@ void block_process(struct list_head *block_queue)
 {
     struct task_struct *act;
     struct stats *st;
+
     act = current();
     st = get_task_stats(act);
     update_current_state(block_queue);
     st->system_ticks = get_ticks() - st->elapsed_total_ticks;
     st->elapsed_total_ticks = get_ticks();
-    act->t_state = ST_BLOCKED;
+    act->t_state = ST_BLOCKED; 
     sched_next();
 }
 
@@ -364,15 +376,16 @@ void unblock_process(struct task_struct *blocked)
 {
     struct stats *st;
     struct list_head *l;
+
     st = get_task_stats(blocked);
     l = get_task_list(blocked);
     list_del(l);
     list_add_tail(l, &readyqueue);
-    st->blocked_ticks += (get_ticks()-st->elapsed_total_ticks);
+    st->blocked_ticks += (get_ticks() - st->elapsed_total_ticks);
     st->elapsed_total_ticks = get_ticks();
-    if (needs_sched()) 
-    {
+	blocked->t_state = ST_READY;
+    if (needs_sched()) {
         update_current_state(&readyqueue);
         sched_next();
-    }  
+    }
 }
