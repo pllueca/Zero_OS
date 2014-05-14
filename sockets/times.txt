@@ -1,0 +1,15 @@
+######
+unbound
+
+######
+100 clients 10000 iteracions
+max client = 100
+max concurrent clients = 100
+time 14894
+
+######
+10000 clients 100 iteracions
+100 clients 10000 iteracions
+max client = 100
+max concurrent clients = 100
+time 14655

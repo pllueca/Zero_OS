@@ -17,8 +17,7 @@
 // the connection
 //
 
-int
-createServerSocket (int port)
+int createServerSocket (int port)
 {
     int fd,error;
     struct sockaddr_in address;
@@ -45,18 +44,18 @@ createServerSocket (int port)
         exit(1);
     }
 
-    #ifdef DEBUG
+#ifdef DEBUG
     printf("server creat [%d]\n",fd);
-    #endif
+#endif
 
     return fd;
 }
 
 /*
- Returns the file descriptor associated to the connection.
- accept system call will fill the socketAddr parameter
- with the address of the socket for the client which is requesting the
- connection, and the addrSize parameter with the size of that address.
+  Returns the file descriptor associated to the connection.
+  accept system call will fill the socketAddr parameter
+  with the address of the socket for the client which is requesting the
+  connection, and the addrSize parameter with the size of that address.
 */
 int acceptNewConnections (int socket_fd)
 {
@@ -70,9 +69,9 @@ int acceptNewConnections (int socket_fd)
         exit(1);
     }
 
-    #ifdef DEBUG
+#ifdef DEBUG
     printf("socket [%d]\n",channel);
-    #endif
+#endif
     return channel;
 }
 
@@ -92,9 +91,9 @@ clientConnection (char *host_name, int port)
     int socket_fd;
     int ret;
 
-    #ifdef DEBUG
+#ifdef DEBUG
     printf("client conection host:[%s] port:[%d]\n",host_name, port);
-    #endif
+#endif
 
     //creates the virtual device for accessing the socket
     socket_fd = socket (AF_INET, SOCK_STREAM, 0);

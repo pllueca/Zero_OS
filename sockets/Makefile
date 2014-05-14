@@ -16,7 +16,7 @@ clientSocket: clientSocket.c socketMng.o
 
 #### DEBUG #####
 serverSocketDBG: serverSocket.c socketMngDBG.o
-	$(CC) -o serverSocket -g serverSocket.c socketMng.o 
+	$(CC) -o serverSocket -g serverSocket.c socketMng.o -DDEBUG
 
 clientSocketDBG: clientSocket.c socketMngDBG.o
 	$(CC) -o clientSocket -g clientSocket.c socketMng.o 
