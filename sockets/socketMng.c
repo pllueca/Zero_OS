@@ -32,11 +32,9 @@ createServerSocket (int port)
     memset(&address, 0, sizeof(address));
     address.sin_family = AF_INET;
     address.sin_addr.s_addr = INADDR_ANY;
-    address.sin_port = port;
-    //s_addr.sa_family = AF_INET;
-    //    s_addr.sa_data = address;
+    address.sin_port = htons(port);
     error = bind(fd, (struct sockaddr *) &address, sizeof(s_addr));  
-    if(error == -1)
+    if(error != 0)
     {
         perror("Error binding socket\n");
         exit(1);
@@ -46,17 +44,21 @@ createServerSocket (int port)
         perror("");
         exit(1);
     }
+
+    #ifdef DEBUG
+    printf("server creat [%d]\n",fd);
+    #endif
+
     return fd;
 }
 
-
-// Returns the file descriptor associated to the connection.
-// accept system call will fill the socketAddr parameter
-// with the address of the socket for the client which is requesting the
-// connection, and the addrSize parameter with the size of that address.
-
-int
-acceptNewConnections (int socket_fd)
+/*
+ Returns the file descriptor associated to the connection.
+ accept system call will fill the socketAddr parameter
+ with the address of the socket for the client which is requesting the
+ connection, and the addrSize parameter with the size of that address.
+*/
+int acceptNewConnections (int socket_fd)
 {
     int channel;
     struct socklen_t *len;
@@ -67,6 +69,10 @@ acceptNewConnections (int socket_fd)
         perror("error al aceptar conexion");
         exit(1);
     }
+
+    #ifdef DEBUG
+    printf("socket [%d]\n",channel);
+    #endif
     return channel;
 }
 
@@ -81,44 +87,53 @@ acceptNewConnections (int socket_fd)
 int
 clientConnection (char *host_name, int port)
 {
+    struct sockaddr_in serv_addr;
+    struct hostent * hent;
+    int socket_fd;
+    int ret;
 
-  struct sockaddr_in serv_addr;
-  struct hostent * hent;
-  int socket_fd;
-  int ret;
+    #ifdef DEBUG
+    printf("client conection host:[%s] port:[%d]\n",host_name, port);
+    #endif
 
-  //creates the virtual device for accessing the socket
-  socket_fd = socket (AF_INET, SOCK_STREAM, 0);
-  if (socket_fd < 0)
-    return socket_fd;
+    //creates the virtual device for accessing the socket
+    socket_fd = socket (AF_INET, SOCK_STREAM, 0);
+    if (socket_fd < 0)
+        return socket_fd;
+    
+    memset((char *) &serv_addr, 0, sizeof(serv_addr));
+    serv_addr.sin_family = AF_INET;
+    hent = gethostbyname(host_name);
 
-  memset((char *) &serv_addr, 0, sizeof(serv_addr));
-
-  serv_addr.sin_family = AF_INET;
-  hent = gethostbyname(host_name);
-  if (hent == NULL) {
+    if (hent == NULL) {
         close (socket_fd);
 	return -1;
+    }
 
-  }
-  memcpy((char *)&serv_addr.sin_addr.s_addr, (char *) hent->h_addr, hent->h_length);
-  serv_addr.sin_port = htons(port);
-  serv_addr.sin_family = PF_INET; 
+    memcpy((char *)&serv_addr.sin_addr.s_addr, 
+           (char *) hent->h_addr, 
+           hent->h_length);
 
-  ret = connect (socket_fd, (struct sockaddr *) &serv_addr, sizeof (serv_addr));
-  if (ret < 0)
-  {
-	  close (socket_fd);
-	  return (ret);
-  } 
+    serv_addr.sin_port = htons(port);
+    serv_addr.sin_family = PF_INET; 
 
-  return socket_fd;
+    ret = connect (socket_fd, 
+                   (struct sockaddr *) &serv_addr, 
+                   sizeof (serv_addr));
+
+    if (ret < 0)
+    {
+        close (socket_fd);
+        return (ret);
+    } 
+
+    return socket_fd;
 
 }
 
 
 int deleteSocket (int socket_fd)
 {
-  close (socket_fd);
+    close (socket_fd);
 }
 
