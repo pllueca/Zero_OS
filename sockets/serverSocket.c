@@ -9,7 +9,10 @@ int NUM_CONECTIONS;
 
 void func_sigchild(int signal)
 {
-    --NUM_CONECTIONS;
+    NUM_CONECTIONS--;
+#ifdef DEBUG
+    printf("Conexions: [%d/%d]\n",NUM_CONECTIONS, MAX_CLIENTS);
+#endif
 }
 
 doService(int fd) {
@@ -60,6 +63,11 @@ void (*ServerLoop)(int socketFD);
 void boundedServerLoop(int socketFD)
 {
     int connectionFD;
+
+#ifdef DEBUG
+    printf("Conexions: [%d/%d]\n",NUM_CONECTIONS, MAX_CLIENTS);
+#endif
+
     if(NUM_CONECTIONS >= MAX_CLIENTS)
     {
 #ifdef DEBUG
@@ -95,16 +103,9 @@ void sequentialServerLoop(int socketFD)
     doService(connectionFD);   
 }
 
-void unboundedServerLoop(int socketFD, int c_fd)
+void unboundedServerLoop(int socketFD)
 {
     int connectionFD;
-    if(NUM_CONECTIONS >= MAX_CLIENTS)
-    {
-#ifdef DEBUG
-        printf("Num maxim de conexions, pause\n");
-#endif
-        pause();
-    }
     connectionFD = acceptNewConnections (socketFD);
     if (connectionFD < 0)
     {

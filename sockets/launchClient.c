@@ -4,9 +4,9 @@
 #include <string.h>
 #include <fcntl.h>
 #include <signal.h>
-#include <sys/types.h>
 #include <sys/wait.h>
-
+#include <sys/types.h>
+#include <sys/stat.h>
 
 
 int max_concurrent = 0;
@@ -19,22 +19,37 @@ void trat_sigchld (int signum) {
 
 main(int argc, char *argv[]) {
     int i, nclients, pidh, fd;
-    char buf[80];
+    char buf[80], *dirName;
     int msec_elapsed;
     struct timeval init_t, end_t;
+    struct stat st = {0};
 
     gettimeofday(&init_t, NULL);
 
-    if (argc != 5) {
-	sprintf(buf, "usage: %s num_clients num_it hostname port\n", argv[0]);
+    if (argc < 5) {
+	sprintf(buf, "usage: %s num_clients num_it hostname port [FolderName]\n", argv[0]);
 	write(1, buf, strlen(buf));
 	exit(1);
     }
 
     signal(SIGCHLD,trat_sigchld);
     nclients = atoi(argv[1]);
+    dirName = "execClient";
+    if(argc == 6)
+    {
+        dirName = argv[5];
+    }
 
-    fd = open("launch_info", O_CREAT|O_TRUNC|O_WRONLY, 0600);
+    /* crea el directori exec */
+    if(stat(dirName,&st) == -1)
+        if ((mkdir(dirName,0700)) == -1)
+        {
+            perror("error creating dir\n");
+            exit(1);
+        }
+    
+    sprintf(buf,"%s/launch_info", dirName);
+    fd = open(buf, O_CREAT|O_TRUNC|O_WRONLY, 0600);
     for (i=0; i<nclients;i++){
 	pidh =fork();
 	switch (pidh){
@@ -42,7 +57,7 @@ main(int argc, char *argv[]) {
             case -1: perror("Error creating client process");
                 exit(1);
             case 0:  
-                sprintf(buf, "client_%d", i);
+                sprintf(buf, "%s/client_%d", dirName, i);
                 fd = open (buf, O_CREAT|O_TRUNC|O_WRONLY, 0600); 
                 if (fd < 0) {
                     perror("Opening client results file");
