@@ -8,7 +8,7 @@ launchClient: launchClient.c
 	$(CC) -o launchClient launchClient.c
 
 serverSocket: serverSocket.c socketMng.o
-	$(CC) -o serverSocket -g serverSocket.c socketMng.o
+	$(CC) -o serverSocket -g serverSocket.c socketMng.o -pthread
 
 clientSocket: clientSocket.c socketMng.o
 	$(CC) -o clientSocket -g clientSocket.c socketMng.o
@@ -16,7 +16,7 @@ clientSocket: clientSocket.c socketMng.o
 
 #### DEBUG #####
 serverSocketDBG: serverSocket.c socketMngDBG.o
-	$(CC) -o serverSocket -g serverSocket.c socketMng.o -DDEBUG
+	$(CC) -o serverSocket -g serverSocket.c socketMng.o -DDEBUG -pthread
 
 clientSocketDBG: clientSocket.c socketMngDBG.o
 	$(CC) -o clientSocket -g clientSocket.c socketMng.o 

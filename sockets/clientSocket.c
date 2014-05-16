@@ -36,25 +36,23 @@ main (int argc, char *argv[])
         exit (1);
     }
 
-    for (i=0; i<num_it; i++) {
+    for (i=0; i<num_it; i++) 
+    {
         ret = write (connectionFD, "hola ",5);
         if (ret < 0)
         {
             perror ("Error writing to connection\n");
             exit (1);
         }
-
         ret = read (connectionFD, buff, sizeof (buff));
         if (ret < 0)
         {
             perror ("Error reading on connection\n");
             exit (1);
         }
-
         buff[ret] = '\0';
         sprintf (buff2, "Client [%d] received: %s\n",getpid(), buff);
         write(1,buff2,strlen(buff2)); 
-
     }
 
     gettimeofday(&end_t, NULL);

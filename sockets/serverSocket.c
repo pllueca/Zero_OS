@@ -2,6 +2,7 @@
 #include <string.h>
 #include <signal.h>
 #include <stdio.h>
+#include <pthread.h>
 
 /* Global vars */
 int MAX_CLIENTS;
@@ -15,8 +16,8 @@ void func_sigchild(int signal)
 #endif
 }
 
-doService(int fd) {
-    int i = 0;
+void doService (int fd) {
+    int i = 0; 
     char buff[80];
     char buff2[80];
     int ret;
@@ -44,7 +45,7 @@ doService(int fd) {
 
 
 /* Unbounded socket */
-doServiceFork(int fd)
+void doServiceFork (int fd)
 {
     int pid;
     pid = fork();
@@ -56,6 +57,14 @@ doServiceFork(int fd)
         doService(fd);
         exit(0);
     }
+}
+
+void *doServiceThread (void *f)
+{
+    int fd;
+    fd = (int) f;
+    doService(fd);
+    pthread_exit(NULL);
 }
 
 void (*ServerLoop)(int socketFD);
@@ -88,6 +97,19 @@ void boundedServerLoop(int socketFD)
 void threadedServerLoop(int socketFD)
 {
     int connectionFD;
+    int r;
+    pthread_t child_thread;
+    connectionFD = acceptNewConnections(socketFD);
+
+    r = pthread_create(&child_thread, 
+                       NULL, 
+                       doServiceThread, 
+                       (void *) connectionFD);
+    if(r){
+        perror("Error creating thread\n");
+        exit(1);
+    }
+
 }
 
 void sequentialServerLoop(int socketFD)

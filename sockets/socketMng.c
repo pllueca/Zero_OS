@@ -62,6 +62,9 @@ int acceptNewConnections (int socket_fd)
     int channel;
     struct socklen_t *len;
     struct sockaddr *dir;
+
+    memset((char *) &dir, 0, sizeof(dir));
+
     channel = accept(socket_fd, dir, len);
     if(channel == -1)
     {
