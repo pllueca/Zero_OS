@@ -12,6 +12,7 @@ void func_sigchild(int signal)
 {
     NUM_CONECTIONS--;
 #ifdef DEBUG
+    printf("acaba hijo *******\n");
     printf("Conexions: [%d/%d]\n",NUM_CONECTIONS, MAX_CLIENTS);
 #endif
 }
@@ -57,6 +58,7 @@ void doServiceFork (int fd)
         doService(fd);
         exit(0);
     }
+    NUM_CONECTIONS++;
 }
 
 void *doServiceThread (void *f)
@@ -79,10 +81,12 @@ void boundedServerLoop(int socketFD)
 
     if(NUM_CONECTIONS >= MAX_CLIENTS)
     {
+
 #ifdef DEBUG
         printf("Num maxim de conexions, pause\n");
 #endif
-        pause();    }
+        while (waitpid(-1,NULL,0) > 0);
+    }
     connectionFD = acceptNewConnections (socketFD);
     if (connectionFD < 0)
     {
@@ -90,7 +94,6 @@ void boundedServerLoop(int socketFD)
         deleteSocket(socketFD);
         exit (1);
     }
-    ++NUM_CONECTIONS;
     doServiceFork(connectionFD);
 }
 
@@ -173,10 +176,12 @@ main (int argc, char *argv[])
     }
     port = atoi(argv[1]);
     schem = atoi(argv[2]);
+
 #ifdef DEBUG
     printf("port: %s\n", argv[1]);
     printf("schem: %s\n",argv[2]);
 #endif
+
     MAX_CLIENTS = 100;
     if(argc == 4)
         MAX_CLIENTS = atoi(argv[3]);
@@ -190,6 +195,10 @@ main (int argc, char *argv[])
     }
     setScheme(schem);
     signal(SIGCHLD,func_sigchild);  // reprogramacio del signal sigchld, quan un fill acaba descompta el nombre de conexions totals
-    while (1) 
+    while (1) {
+#ifdef DEBUG
+        printf("Conexions: [%d/%d]\n",NUM_CONECTIONS, MAX_CLIENTS);
+#endif
         ServerLoop(socketFD);
-}
+    }
+    }

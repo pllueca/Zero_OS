@@ -21,6 +21,7 @@ main(int argc, char *argv[]) {
     int i, nclients, pidh, fd;
     char buf[80], *dirName;
     int msec_elapsed;
+    double avg_exeT, clientsperS;
     struct timeval init_t, end_t;
     struct stat st = {0};
 
