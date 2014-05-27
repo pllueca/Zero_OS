@@ -9,7 +9,10 @@ do
     for j in 1 50 200 300 500 750 1000 2000
     do
 	# i = num clients, j = num iteracions
-	echo "$i clients i $j iteracions\n"
-	./launchClient $i $j localhost 5000 $experiments/prova-$i-$j
+	for k in 1 2 3
+	do
+	    echo "$i clients i $j iteracions\n"
+	    ./launchClient $i $j localhost 5000 $experiments/prova-$k-$i-$j
+	done
     done
 done        

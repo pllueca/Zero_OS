@@ -86,7 +86,7 @@ main(int argc, char *argv[]) {
     write(fd, buf, strlen(buf));
 
     gettimeofday(&end_t, NULL);
-    msec_elapsed = (end_t.tv_sec*1000)+(end_t.tv_usec/1000)- (init_t.tv_sec*1000)+(init_t.tv_usec/1000);
+    msec_elapsed = (end_t.tv_sec*1000)+(end_t.tv_usec/1000) - (init_t.tv_sec*1000)+(init_t.tv_usec/1000);
 
     sprintf(buf, "Time %d\n", msec_elapsed);
     write (fd, buf,strlen(buf));
