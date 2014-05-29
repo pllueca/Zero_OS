@@ -25,7 +25,7 @@ main(int argc, char *argv[]) {
     struct timeval init_t, end_t;
     struct stat st = {0};
 
-    gettimeofday(&init_t, NULL);
+
 
     if (argc < 5) {
 	sprintf(buf, "usage: %s num_clients num_it hostname port [FolderName]\n", argv[0]);
@@ -51,10 +51,10 @@ main(int argc, char *argv[]) {
     
     sprintf(buf,"%s/launch_info", dirName);
     fd = open(buf, O_CREAT|O_TRUNC|O_WRONLY, 0600);
+    gettimeofday(&init_t, NULL);
     for (i=0; i<nclients;i++){
 	pidh =fork();
 	switch (pidh){
-
             case -1: perror("Error creating client process");
                 exit(1);
             case 0:  
@@ -78,16 +78,11 @@ main(int argc, char *argv[]) {
             write(fd, buf, strlen(buf));
 	}
     }
-
-
     while (waitpid(-1,NULL,0) > 0);
-
     sprintf(buf,"MAX CONCURRENT CLIENTS: %d\n", max_concurrent);
     write(fd, buf, strlen(buf));
-
     gettimeofday(&end_t, NULL);
     msec_elapsed = (end_t.tv_sec*1000)+(end_t.tv_usec/1000) - (init_t.tv_sec*1000)+(init_t.tv_usec/1000);
-
     sprintf(buf, "Time %d\n", msec_elapsed);
     write (fd, buf,strlen(buf));
     close(fd);
